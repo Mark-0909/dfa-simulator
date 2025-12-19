@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   ReactFlow,
   Background,
@@ -11,6 +11,7 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import SelfLoopEdge from './SelfLoopEdge';
+import CircularNode from './CircularNode';
 
 // --- STYLING (Based on Lesson 6 Formalisms) ---
 const nodeStyle = {
@@ -26,12 +27,39 @@ const edgeTypes = {
   selfLoop: SelfLoopEdge,
 };
 
+const nodeTypes = {
+  circular: CircularNode,
+};
+
 function AutomataSimulator() {
   const [nodes, setNodes] = useState([
-    { id: 'q0', position: { x: 100, y: 150 }, data: { label: 'q0' }, style: nodeStyle, sourcePosition: 'top', targetPosition: 'top' },
-    { id: 'q1', position: { x: 250, y: 150 }, data: { label: 'q1' }, style: finalStyle, sourcePosition: 'top', targetPosition: 'top' },
-    { id: 'q2', position: { x: 400, y: 150 }, data: { label: 'q2' }, style: finalStyle, sourcePosition: 'top', targetPosition: 'top' },
+    { id: 'q0', type: 'circular', position: { x: 100, y: 150 }, data: { label: 'q0', angle: -90 }, style: nodeStyle },
+    { id: 'q1', type: 'circular', position: { x: 250, y: 150 }, data: { label: 'q1', angle: -90, isFinal: true }, style: finalStyle },
+    { id: 'q2', type: 'circular', position: { x: 400, y: 150 }, data: { label: 'q2', angle: -90, isFinal: true }, style: finalStyle },
   ]);
+
+  // Inject update function into data whenever nodes/callback changes
+  // Actually, we can pass it down via nodeTypes props? No.
+  // We need to ensure 'data' has 'onAngleChange'.
+  // Simple way: Update the useState initialization and addState to include it?
+  // Or use an effect to patch it?
+  // Better: Pass it in the initial state and when adding nodes.
+  // Warning: functions in data can be lossy if serialized, but for client-side valid.
+
+  // NOTE: For brevity in this replace, I will not patch existing state logic completely here.
+  // instead I'll use a useEffect to attach the handler or just patch init.
+  // Let's modify the onNodesChange or similar to keep it persistent?
+  // Simplest: Wrap setNodes or use a useEffect to inject the handler into the nodes.
+
+  useEffect(() => {
+    setNodes((nds) => nds.map(n => ({
+      ...n,
+      data: { ...n.data, onAngleChange: (a) => updateNodeAngle(n.id, a) }
+    })));
+  }, []); // Run once to attach to initial nodes. 
+  // Wait, addState needs it too.
+
+
   const [edges, setEdges] = useState([
     { id: 'e1', source: 'q0', target: 'q1', label: 'a', style: { strokeWidth: 2, stroke: '#2c3e50' }, markerEnd: { type: MarkerType.ArrowClosed, color: '#2c3e50' }, type: 'smoothstep' },
     { id: 'e2', source: 'q0', target: 'q2', label: 'b', style: { strokeWidth: 2, stroke: '#2c3e50' }, markerEnd: { type: MarkerType.ArrowClosed, color: '#2c3e50' }, type: 'smoothstep' }
@@ -86,8 +114,6 @@ function AutomataSimulator() {
         source: stateId,
         target: stateId,
         label,
-        target: stateId,
-        label,
         type: 'selfLoop',
         markerEnd: { type: MarkerType.ArrowClosed },
         style: { strokeWidth: 2 }
@@ -99,12 +125,10 @@ function AutomataSimulator() {
     const id = `q${nodeCount}`;
     const newNode = {
       id,
-      data: { label: id },
+      type: 'circular',
+      data: { label: id, angle: -90, onAngleChange: (a) => updateNodeAngle(id, a) },
       position: { x: 100 + nodeCount * 150, y: 150 },
-      style: nodeStyle,
-      // Provide explicit top handle for self-loops
-      sourcePosition: 'top',
-      targetPosition: 'top'
+      style: nodeStyle
     };
     setNodes((nds) => [...nds, newNode]);
     setNodeCount(nodeCount + 1);
@@ -122,6 +146,17 @@ function AutomataSimulator() {
       style: newAccepting.has(node.id) ? finalStyle : nodeStyle,
     })));
   };
+
+  const updateNodeAngle = (id, angle) => {
+    setNodes((nds) => nds.map((n) => {
+      if (n.id === id) {
+        return { ...n, data: { ...n.data, angle: Number(angle) } };
+      }
+      return n;
+    }));
+  };
+
+
 
   const testDFA = () => {
     if (!startState) return setTestResult('⚠️ Set a start state first.');
@@ -149,6 +184,7 @@ function AutomataSimulator() {
     <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', background: '#f5f6fa' }}>
       <header style={{ padding: '20px', background: '#2c3e50', color: '#fff' }}>
         <h2 style={{ margin: 0 }}>DFA Framework Simulator</h2>
+
         <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
           <button onClick={addState} style={btnStyle('#1abc9c')}>Add State</button>
           <button onClick={addSelfLoop} style={btnStyle('#9b59b6')}>Add Self-Loop</button>
@@ -168,10 +204,14 @@ function AutomataSimulator() {
           nodes={nodes}
           edges={edges}
           edgeTypes={edgeTypes}
+          nodeTypes={nodeTypes}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
-          onNodeClick={(_, n) => toggleAccepting(n.id)}
+          onNodeClick={(_, n) => {
+            // Toggle accepting logic
+            toggleAccepting(n.id);
+          }}
           fitView
         >
           <Background variant="dots" />
