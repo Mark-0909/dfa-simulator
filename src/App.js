@@ -1,45 +1,57 @@
 import React, { useState, useCallback } from 'react';
-import { 
-  ReactFlow, 
-  Background, 
-  Controls, 
+import {
+  ReactFlow,
+  Background,
+  Controls,
   ReactFlowProvider,
-  applyEdgeChanges, 
+  applyEdgeChanges,
   applyNodeChanges,
   MarkerType,
   addEdge
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import SelfLoopEdge from './SelfLoopEdge';
 
 // --- STYLING (Based on Lesson 6 Formalisms) ---
 const nodeStyle = {
   borderRadius: '50%', width: 60, height: 60,
   display: 'flex', alignItems: 'center', justifyContent: 'center',
-  backgroundColor: '#fff', border: '2px solid #2c3e50', 
+  backgroundColor: '#fff', border: '2px solid #2c3e50',
   fontWeight: 'bold', fontSize: '14px'
 };
 
 const finalStyle = { ...nodeStyle, border: '5px double #2c3e50' };
 
+const edgeTypes = {
+  selfLoop: SelfLoopEdge,
+};
+
 function AutomataSimulator() {
-  const [nodes, setNodes] = useState([]);
-  const [edges, setEdges] = useState([]);
-  const [nodeCount, setNodeCount] = useState(0);
-  const [startState, setStartState] = useState('');
-  const [acceptingStates, setAcceptingStates] = useState(new Set());
-  const [testString, setTestString] = useState('');
+  const [nodes, setNodes] = useState([
+    { id: 'q0', position: { x: 100, y: 150 }, data: { label: 'q0' }, style: nodeStyle, sourcePosition: 'top', targetPosition: 'top' },
+    { id: 'q1', position: { x: 250, y: 150 }, data: { label: 'q1' }, style: finalStyle, sourcePosition: 'top', targetPosition: 'top' },
+    { id: 'q2', position: { x: 400, y: 150 }, data: { label: 'q2' }, style: finalStyle, sourcePosition: 'top', targetPosition: 'top' },
+  ]);
+  const [edges, setEdges] = useState([
+    { id: 'e1', source: 'q0', target: 'q1', label: 'a', style: { strokeWidth: 2, stroke: '#2c3e50' }, markerEnd: { type: MarkerType.ArrowClosed, color: '#2c3e50' }, type: 'smoothstep' },
+    { id: 'e2', source: 'q0', target: 'q2', label: 'b', style: { strokeWidth: 2, stroke: '#2c3e50' }, markerEnd: { type: MarkerType.ArrowClosed, color: '#2c3e50' }, type: 'smoothstep' }
+  ]);
+  const [nodeCount, setNodeCount] = useState(3);
+  const [startState, setStartState] = useState('q0');
+  const [acceptingStates, setAcceptingStates] = useState(new Set(['q1', 'q2']));
+  const [testString, setTestString] = useState('aa');
   const [testResult, setTestResult] = useState('');
 
   const onNodesChange = useCallback((chs) => setNodes((nds) => applyNodeChanges(chs, nds)), []);
   const onEdgesChange = useCallback((chs) => setEdges((eds) => applyEdgeChanges(chs, eds)), []);
-  
+
   // --- IMPROVED CONNECTION LOGIC (Handles Self-Loops Visually) ---
   const onConnect = useCallback((params) => {
     const label = prompt('Enter transition symbol (e.g., a or b):');
     if (!label) return;
 
     const isSelfLoop = params.source === params.target;
-    
+
     const newEdge = {
       ...params,
       id: `e-${params.source}-${params.target}-${Date.now()}`,
@@ -52,10 +64,7 @@ function AutomataSimulator() {
       // Force self-loops to use a Bezier curve attached to the top
       setEdges((eds) => addEdge({
         ...newEdge,
-        type: 'bezier',
-        sourceHandle: 't', // 't' for top handle
-        targetHandle: 't',
-        curvature: 3,      // Higher value makes the loop more prominent
+        type: 'selfLoop',
       }, eds));
     } else {
       setEdges((eds) => addEdge({ ...newEdge, type: 'smoothstep' }, eds));
@@ -66,7 +75,7 @@ function AutomataSimulator() {
   const addSelfLoop = () => {
     const stateId = prompt('Enter state ID for self-loop (e.g., q0):');
     if (!stateId) return;
-    
+
     const stateExists = nodes.find(n => n.id === stateId);
     if (!stateExists) return alert(`State ${stateId} not found!`);
 
@@ -77,9 +86,9 @@ function AutomataSimulator() {
         source: stateId,
         target: stateId,
         label,
-        type: 'bezier',
-        sourceHandle: 't',
-        targetHandle: 't',
+        target: stateId,
+        label,
+        type: 'selfLoop',
         markerEnd: { type: MarkerType.ArrowClosed },
         style: { strokeWidth: 2 }
       }]);
@@ -106,7 +115,7 @@ function AutomataSimulator() {
     const newAccepting = new Set(acceptingStates);
     if (newAccepting.has(stateId)) newAccepting.delete(stateId);
     else newAccepting.add(stateId);
-    
+
     setAcceptingStates(newAccepting);
     setNodes((nds) => nds.map((node) => ({
       ...node,
@@ -118,20 +127,22 @@ function AutomataSimulator() {
     if (!startState) return setTestResult('⚠️ Set a start state first.');
     let current = startState;
     const input = testString.trim();
+    let path = [current];
 
     for (let char of input) {
-      const edge = edges.find(e => 
+      const edge = edges.find(e =>
         e.source === current && e.label.split(',').map(s => s.trim()).includes(char)
       );
       if (!edge) {
-        setTestResult(`❌ Rejected at ${current}: No transition for '${char}'`);
+        setTestResult(`❌ Rejected at ${current} (Path: ${path.join('->')}): No transition for '${char}'`);
         return;
       }
       current = edge.target;
+      path.push(current);
     }
 
-    if (acceptingStates.has(current)) setTestResult(`✅ Accepted! Ended in ${current}`);
-    else setTestResult(`❌ Rejected: Ended in non-final state ${current}`);
+    if (acceptingStates.has(current)) setTestResult(`✅ Accepted! Ended in ${current} (Path: ${path.join('->')})`);
+    else setTestResult(`❌ Rejected: Ended in non-final state ${current} (Path: ${path.join('->')})`);
   };
 
   return (
@@ -141,10 +152,10 @@ function AutomataSimulator() {
         <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
           <button onClick={addState} style={btnStyle('#1abc9c')}>Add State</button>
           <button onClick={addSelfLoop} style={btnStyle('#9b59b6')}>Add Self-Loop</button>
-          <input 
-            value={testString} 
-            onChange={e => setTestString(e.target.value)} 
-            placeholder="Test string (e.g. aaab)" 
+          <input
+            value={testString}
+            onChange={e => setTestString(e.target.value)}
+            placeholder="Test string (e.g. aaab)"
             style={{ padding: '8px', borderRadius: '4px' }}
           />
           <button onClick={testDFA} style={btnStyle('#3498db')}>Test</button>
@@ -153,11 +164,12 @@ function AutomataSimulator() {
       </header>
 
       <div style={{ flexGrow: 1 }}>
-        <ReactFlow 
-          nodes={nodes} 
-          edges={edges} 
-          onNodesChange={onNodesChange} 
-          onEdgesChange={onEdgesChange} 
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          edgeTypes={edgeTypes}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
           onConnect={onConnect}
           onNodeClick={(_, n) => toggleAccepting(n.id)}
           fitView
