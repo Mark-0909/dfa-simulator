@@ -12,6 +12,7 @@ import {
 import '@xyflow/react/dist/style.css';
 import SelfLoopEdge from './SelfLoopEdge';
 import CircularNode from './CircularNode';
+import ContextMenu from './ContextMenu';
 
 // --- STYLING (Based on Lesson 6 Formalisms) ---
 const nodeStyle = {
@@ -30,6 +31,8 @@ const edgeTypes = {
 const nodeTypes = {
   circular: CircularNode,
 };
+
+
 
 function AutomataSimulator() {
   const [nodes, setNodes] = useState([
@@ -51,7 +54,7 @@ function AutomataSimulator() {
     { id: 'e1', source: 'q0', target: 'q1', label: 'a', style: { strokeWidth: 2, stroke: '#2c3e50' }, markerEnd: { type: MarkerType.ArrowClosed, color: '#2c3e50' }, type: 'smoothstep' },
     { id: 'e2', source: 'q0', target: 'q2', label: 'b', style: { strokeWidth: 2, stroke: '#2c3e50' }, markerEnd: { type: MarkerType.ArrowClosed, color: '#2c3e50' }, type: 'smoothstep' }
   ]);
-  const [nodeCount, setNodeCount] = useState(3);
+
   const [startState, setStartState] = useState('q0');
   const [acceptingStates, setAcceptingStates] = useState(new Set(['q1', 'q2']));
   const [testString, setTestString] = useState('aa');
@@ -60,6 +63,10 @@ function AutomataSimulator() {
   const [showSelfLoopModal, setShowSelfLoopModal] = useState(false);
   const [selectedNodeForLoop, setSelectedNodeForLoop] = useState('');
   const [loopLabel, setLoopLabel] = useState('');
+
+  // Context Menu State
+  const [menu, setMenu] = useState(null);
+  const ref = React.useRef(null);
 
   const onNodesChange = useCallback((chs) => setNodes((nds) => applyNodeChanges(chs, nds)), []);
   const onEdgesChange = useCallback((chs) => setEdges((eds) => applyEdgeChanges(chs, eds)), []);
@@ -125,16 +132,29 @@ function AutomataSimulator() {
   };
 
   const addState = () => {
-    const id = `q${nodeCount}`;
+    // Find the lowest available id
+    let i = 0;
+    while (true) {
+      if (!nodes.find(n => n.id === `q${i}`)) {
+        break;
+      }
+      i++;
+    }
+    const id = `q${i}`;
+
+    const makeAngleHandler = (nodeId) => (a) => updateNodeAngle(nodeId, a);
+
     const newNode = {
       id,
       type: 'circular',
-      data: { label: id, angle: -90, onAngleChange: (a) => updateNodeAngle(id, a) },
-      position: { x: 100 + nodeCount * 150, y: 150 },
+      data: { label: id, angle: -90, onAngleChange: makeAngleHandler(id) },
+
+      // Use i-based positioning to match original logic but using recycled index
+      position: { x: 100 + (nodes.length) * 100, y: 150 + (nodes.length % 2) * 50 },
       style: nodeStyle
     };
     setNodes((nds) => [...nds, newNode]);
-    setNodeCount(nodeCount + 1);
+    // setNodeCount can be removed or ignored.
     if (startState === '') setStartState(id);
   };
 
@@ -144,10 +164,15 @@ function AutomataSimulator() {
     else newAccepting.add(stateId);
 
     setAcceptingStates(newAccepting);
-    setNodes((nds) => nds.map((node) => ({
-      ...node,
-      style: newAccepting.has(node.id) ? finalStyle : nodeStyle,
-    })));
+    setNodes((nds) => nds.map((node) => {
+      if (node.id !== stateId) return node;
+      const isFinal = newAccepting.has(node.id);
+      return {
+        ...node,
+        style: isFinal ? finalStyle : nodeStyle,
+        data: { ...node.data, isFinal: isFinal }
+      };
+    }));
   };
 
   const updateNodeAngle = (id, angle) => {
@@ -159,7 +184,46 @@ function AutomataSimulator() {
     }));
   };
 
+  // --- CONTEXT MENU HANDLERS ---
+  const onNodeContextMenu = useCallback(
+    (event, node) => {
+      // Prevent native context menu from showing
+      event.preventDefault();
 
+      // Calculate position
+      // Using clientX/Y implies positioning relative to viewport, but we need to consider the canvas.
+      // Actually, React Flow pane has its own coordinate system, but for a fixed overlay, client coordinates act as absolute position.
+      // We'll use event.clientX and event.clientY for the fixed overlay.
+
+
+
+      setMenu({
+        id: node.id,
+        top: event.clientY,
+        left: event.clientX,
+      });
+    },
+    [setMenu],
+  );
+
+  const onPaneClick = useCallback(() => setMenu(null), [setMenu]);
+
+  const handleMenuClick = (action, id) => {
+    if (action === 'delete') {
+      setNodes((nds) => nds.filter((n) => n.id !== id));
+      setEdges((eds) => eds.filter((e) => e.source !== id && e.target !== id));
+      // Also cleanup accepting set
+      if (acceptingStates.has(id)) {
+        const newSet = new Set(acceptingStates);
+        newSet.delete(id);
+        setAcceptingStates(newSet);
+      }
+      if (startState === id) setStartState('');
+    } else if (action === 'final') {
+      toggleAccepting(id);
+    }
+    setMenu(null);
+  };
 
   const testDFA = () => {
     if (!startState) return setTestResult('⚠️ Set a start state first.');
@@ -203,7 +267,7 @@ function AutomataSimulator() {
         {testResult && <div style={{ marginTop: '10px', fontWeight: 'bold' }}>{testResult}</div>}
       </header>
 
-      <div style={{ flexGrow: 1 }}>
+      <div style={{ flexGrow: 1 }} ref={ref}>
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -213,13 +277,16 @@ function AutomataSimulator() {
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
           onNodeClick={(_, n) => {
-            // Toggle accepting logic
+            // Toggle accepting logic - Keeping existing behavior as requested, but also available in menu
             toggleAccepting(n.id);
           }}
+          onNodeContextMenu={onNodeContextMenu}
+          onPaneClick={onPaneClick}
           fitView
         >
           <Background variant="dots" />
           <Controls />
+          {menu && <ContextMenu onClick={handleMenuClick} {...menu} />}
         </ReactFlow>
       </div>
 

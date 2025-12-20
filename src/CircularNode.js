@@ -106,6 +106,7 @@ export default function CircularNode({ data, id, selected }) {
                     type="target"
                     position={Position.Top}
                     id="b"
+                    isConnectableStart={false}
                     style={{
                         opacity: 0,
                         position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)'
