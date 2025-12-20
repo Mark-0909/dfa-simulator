@@ -38,26 +38,13 @@ function AutomataSimulator() {
     { id: 'q2', type: 'circular', position: { x: 400, y: 150 }, data: { label: 'q2', angle: -90, isFinal: true }, style: finalStyle },
   ]);
 
-  // Inject update function into data whenever nodes/callback changes
-  // Actually, we can pass it down via nodeTypes props? No.
-  // We need to ensure 'data' has 'onAngleChange'.
-  // Simple way: Update the useState initialization and addState to include it?
-  // Or use an effect to patch it?
-  // Better: Pass it in the initial state and when adding nodes.
-  // Warning: functions in data can be lossy if serialized, but for client-side valid.
-
-  // NOTE: For brevity in this replace, I will not patch existing state logic completely here.
-  // instead I'll use a useEffect to attach the handler or just patch init.
-  // Let's modify the onNodesChange or similar to keep it persistent?
-  // Simplest: Wrap setNodes or use a useEffect to inject the handler into the nodes.
-
+  // Attach angle change handler to initial nodes
   useEffect(() => {
     setNodes((nds) => nds.map(n => ({
       ...n,
       data: { ...n.data, onAngleChange: (a) => updateNodeAngle(n.id, a) }
     })));
-  }, []); // Run once to attach to initial nodes. 
-  // Wait, addState needs it too.
+  }, []);
 
 
   const [edges, setEdges] = useState([
@@ -69,6 +56,10 @@ function AutomataSimulator() {
   const [acceptingStates, setAcceptingStates] = useState(new Set(['q1', 'q2']));
   const [testString, setTestString] = useState('aa');
   const [testResult, setTestResult] = useState('');
+
+  const [showSelfLoopModal, setShowSelfLoopModal] = useState(false);
+  const [selectedNodeForLoop, setSelectedNodeForLoop] = useState('');
+  const [loopLabel, setLoopLabel] = useState('');
 
   const onNodesChange = useCallback((chs) => setNodes((nds) => applyNodeChanges(chs, nds)), []);
   const onEdgesChange = useCallback((chs) => setEdges((eds) => applyEdgeChanges(chs, eds)), []);
@@ -101,24 +92,36 @@ function AutomataSimulator() {
 
   // --- MANUAL SELF-LOOP BUTTON ---
   const addSelfLoop = () => {
-    const stateId = prompt('Enter state ID for self-loop (e.g., q0):');
-    if (!stateId) return;
-
-    const stateExists = nodes.find(n => n.id === stateId);
-    if (!stateExists) return alert(`State ${stateId} not found!`);
-
-    const label = prompt('Enter transition symbol:');
-    if (label) {
-      setEdges((eds) => [...eds, {
-        id: `self-${stateId}-${Date.now()}`,
-        source: stateId,
-        target: stateId,
-        label,
-        type: 'selfLoop',
-        markerEnd: { type: MarkerType.ArrowClosed },
-        style: { strokeWidth: 2 }
-      }]);
+    // Determine the default node to select (e.g., the first one or the last added)
+    // If we have nodes, default to the first one.
+    if (nodes.length > 0) {
+      setSelectedNodeForLoop(nodes[0].id);
     }
+    setLoopLabel('');
+    setShowSelfLoopModal(true);
+  };
+
+  const handleSaveSelfLoop = () => {
+    if (!selectedNodeForLoop) {
+      alert('Please select a state.');
+      return;
+    }
+    if (!loopLabel) {
+      alert('Please enter a transition symbol.');
+      return;
+    }
+
+    setEdges((eds) => [...eds, {
+      id: `self-${selectedNodeForLoop}-${Date.now()}`,
+      source: selectedNodeForLoop,
+      target: selectedNodeForLoop,
+      label: loopLabel,
+      type: 'selfLoop',
+      markerEnd: { type: MarkerType.ArrowClosed },
+      style: { strokeWidth: 2 }
+    }]);
+
+    setShowSelfLoopModal(false);
   };
 
   const addState = () => {
@@ -165,8 +168,9 @@ function AutomataSimulator() {
     let path = [current];
 
     for (let char of input) {
+      const loopCurrent = current;
       const edge = edges.find(e =>
-        e.source === current && e.label.split(',').map(s => s.trim()).includes(char)
+        e.source === loopCurrent && e.label.split(',').map(s => s.trim()).includes(char)
       );
       if (!edge) {
         setTestResult(`❌ Rejected at ${current} (Path: ${path.join('->')}): No transition for '${char}'`);
@@ -218,11 +222,53 @@ function AutomataSimulator() {
           <Controls />
         </ReactFlow>
       </div>
+
+      {showSelfLoopModal && (
+        <div style={modalOverlayStyle}>
+          <div style={modalContentStyle}>
+            <h3>Add Self Loop</h3>
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '5px' }}>Select State:</label>
+              <select
+                value={selectedNodeForLoop}
+                onChange={(e) => setSelectedNodeForLoop(e.target.value)}
+                style={inputStyle}
+              >
+                {nodes.map(n => (
+                  <option key={n.id} value={n.id}>{n.data.label}</option>
+                ))}
+              </select>
+            </div>
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '5px' }}>Transition Symbol:</label>
+              <input
+                type="text"
+                value={loopLabel}
+                onChange={(e) => setLoopLabel(e.target.value)}
+                placeholder="e.g. a, b"
+                style={inputStyle}
+              />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button onClick={() => setShowSelfLoopModal(false)} style={btnStyle('#95a5a6')}>Cancel</button>
+              <button onClick={handleSaveSelfLoop} style={btnStyle('#2ecc71')}>Save</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 const btnStyle = (bg) => ({ background: bg, color: '#fff', border: 'none', padding: '8px 15px', borderRadius: '4px', cursor: 'pointer' });
+const inputStyle = { width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box' };
+const modalOverlayStyle = {
+  position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+  backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+};
+const modalContentStyle = {
+  background: '#fff', padding: '20px', borderRadius: '8px', width: '300px', boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+};
 
 export default function App() {
   return <ReactFlowProvider><AutomataSimulator /></ReactFlowProvider>;

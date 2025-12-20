@@ -1,5 +1,5 @@
-import React from 'react';
-import { Handle, Position } from '@xyflow/react';
+import React, { useEffect } from 'react';
+import { Handle, Position, useUpdateNodeInternals } from '@xyflow/react';
 
 const nodeStyle = {
     borderRadius: '50%', width: 60, height: 60,
@@ -14,6 +14,7 @@ const nodeStyle = {
 const finalStyle = { ...nodeStyle, border: '5px double #2c3e50' };
 
 export default function CircularNode({ data, id, selected }) {
+    const updateNodeInternals = useUpdateNodeInternals();
     const angle = data.angle !== undefined ? data.angle : -90;
     const rad = (angle * Math.PI) / 180;
 
@@ -22,6 +23,10 @@ export default function CircularNode({ data, id, selected }) {
     // x = 50 + 50 * cos
     const handleX = 50 + 50 * Math.cos(rad);
     const handleY = 50 + 50 * Math.sin(rad);
+
+    useEffect(() => {
+        updateNodeInternals(id);
+    }, [angle, id, updateNodeInternals]);
 
     const isFinal = data.isFinal;
     const style = isFinal ? finalStyle : nodeStyle;
