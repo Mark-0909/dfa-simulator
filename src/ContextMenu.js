@@ -8,6 +8,7 @@ export default function ContextMenu({
     bottom,
     onMouseLeave,
     onClick,
+    type = 'node',
     ...props
 }) {
     return (
@@ -29,41 +30,64 @@ export default function ContextMenu({
             {...props}
             onMouseLeave={onMouseLeave}
         >
-            <button
-                style={{
-                    display: 'block',
-                    width: '100%',
-                    padding: '8px 12px',
-                    textAlign: 'left',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    color: '#e74c3c'
-                }}
-                onMouseEnter={(e) => e.target.style.background = '#f5f5f5'}
-                onMouseLeave={(e) => e.target.style.background = 'none'}
-                onClick={() => onClick('delete', id)}
-            >
-                Delete Node
-            </button>
-            <button
-                style={{
-                    display: 'block',
-                    width: '100%',
-                    padding: '8px 12px',
-                    textAlign: 'left',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                }}
-                onMouseEnter={(e) => e.target.style.background = '#f5f5f5'}
-                onMouseLeave={(e) => e.target.style.background = 'none'}
-                onClick={() => onClick('final', id)}
-            >
-                Toggle Final State
-            </button>
+            {type === 'node' ? (
+                <>
+                    <button
+                        style={{
+                            display: 'block',
+                            width: '100%',
+                            padding: '8px 12px',
+                            textAlign: 'left',
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                            color: '#e74c3c'
+                        }}
+                        onMouseEnter={(e) => e.target.style.background = '#f5f5f5'}
+                        onMouseLeave={(e) => e.target.style.background = 'none'}
+                        onClick={() => onClick('delete', id)}
+                    >
+                        Delete Node
+                    </button>
+                    <button
+                        style={{
+                            display: 'block',
+                            width: '100%',
+                            padding: '8px 12px',
+                            textAlign: 'left',
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                        }}
+                        onMouseEnter={(e) => e.target.style.background = '#f5f5f5'}
+                        onMouseLeave={(e) => e.target.style.background = 'none'}
+                        onClick={() => onClick('final', id)}
+                    >
+                        Toggle Final State
+                    </button>
+                </>
+            ) : (
+                <button
+                    style={{
+                        display: 'block',
+                        width: '100%',
+                        padding: '8px 12px',
+                        textAlign: 'left',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        color: '#e74c3c'
+                    }}
+                    onMouseEnter={(e) => e.target.style.background = '#f5f5f5'}
+                    onMouseLeave={(e) => e.target.style.background = 'none'}
+                    onClick={() => onClick('deleteEdge', id)}
+                >
+                    Delete Edge
+                </button>
+            )}
         </div>
     );
 }

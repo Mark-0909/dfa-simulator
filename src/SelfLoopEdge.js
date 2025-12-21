@@ -53,9 +53,9 @@ export default function SelfLoopEdge({
     const startX = centerX + radius * Math.cos(startAngle) + anchorShiftX;
     const startY = centerY + radius * Math.sin(startAngle) + anchorShiftY;
 
-    // End point
-    const endX = centerX + radius * Math.cos(endAngle) + anchorShiftX;
-    const endY = centerY + radius * Math.sin(endAngle) + anchorShiftY;
+    // End point - pull back slightly from the circle edge so arrow is visible
+    const endX = centerX + (radius - 5) * Math.cos(endAngle) + anchorShiftX;
+    const endY = centerY + (radius - 5) * Math.sin(endAngle) + anchorShiftY;
 
     // Control Points
     // Default bulge angles; can be overridden by edge `data` via dragging.

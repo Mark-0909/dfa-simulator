@@ -221,15 +221,23 @@ function AutomataSimulator() {
       // Prevent native context menu from showing
       event.preventDefault();
 
-      // Calculate position
-      // Using clientX/Y implies positioning relative to viewport, but we need to consider the canvas.
-      // Actually, React Flow pane has its own coordinate system, but for a fixed overlay, client coordinates act as absolute position.
-      // We'll use event.clientX and event.clientY for the fixed overlay.
-
-
-
       setMenu({
         id: node.id,
+        type: 'node',
+        top: event.clientY,
+        left: event.clientX,
+      });
+    },
+    [setMenu],
+  );
+
+  const onEdgeContextMenu = useCallback(
+    (event, edge) => {
+      event.preventDefault();
+
+      setMenu({
+        id: edge.id,
+        type: 'edge',
         top: event.clientY,
         left: event.clientX,
       });
@@ -250,6 +258,8 @@ function AutomataSimulator() {
         setAcceptingStates(newSet);
       }
       if (startState === id) setStartState('');
+    } else if (action === 'deleteEdge') {
+      setEdges((eds) => eds.filter((e) => e.id !== id));
     } else if (action === 'final') {
       toggleAccepting(id);
     }
@@ -312,6 +322,7 @@ function AutomataSimulator() {
             toggleAccepting(n.id);
           }}
           onNodeContextMenu={onNodeContextMenu}
+          onEdgeContextMenu={onEdgeContextMenu}
           onPaneClick={onPaneClick}
           fitView
         >
