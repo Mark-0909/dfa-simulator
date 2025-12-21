@@ -91,6 +91,11 @@ function AutomataSimulator() {
   const [showSelfLoopModal, setShowSelfLoopModal] = useState(false);
   const [selectedNodeForLoop, setSelectedNodeForLoop] = useState('');
   const [loopLabel, setLoopLabel] = useState('');
+  const [showConnectModal, setShowConnectModal] = useState(false);
+  const [pendingConnect, setPendingConnect] = useState(null);
+  const [connectLabel, setConnectLabel] = useState('');
+  const [connectError, setConnectError] = useState('');
+  const [selfLoopError, setSelfLoopError] = useState('');
 
   // Context Menu State
   const [menu, setMenu] = useState(null);
@@ -104,29 +109,42 @@ function AutomataSimulator() {
 
   // --- IMPROVED CONNECTION LOGIC (Handles Self-Loops Visually) ---
   const onConnect = useCallback((params) => {
-    const label = prompt('Enter transition symbol (e.g., a or b):');
-    if (!label) return;
+    // Open the custom connection modal instead of using window.prompt
+    setPendingConnect(params);
+    setConnectLabel('');
+    setConnectError('');
+    setShowConnectModal(true);
+  }, []);
 
+  const handleSaveConnection = () => {
+    if (!pendingConnect) return setShowConnectModal(false);
+    if (!connectLabel) {
+      setConnectError('Please enter a transition symbol.');
+      return;
+    }
+
+    const params = pendingConnect;
     const isSelfLoop = params.source === params.target;
 
     const newEdge = {
       ...params,
       id: `e-${params.source}-${params.target}-${Date.now()}`,
-      label,
+      label: connectLabel,
       markerEnd: { type: MarkerType.ArrowClosed, color: '#2c3e50' },
       style: { strokeWidth: 2, stroke: '#2c3e50' },
     };
 
     if (isSelfLoop) {
-      // Force self-loops to use a Bezier curve attached to the top
-      setEdges((eds) => applyEdgeOffsets(addEdge({
-        ...newEdge,
-        type: 'selfLoop',
-      }, eds)));
+      setEdges((eds) => applyEdgeOffsets(addEdge({ ...newEdge, type: 'selfLoop' }, eds)));
     } else {
       setEdges((eds) => applyEdgeOffsets(addEdge({ ...newEdge, type: 'adjustableBezier' }, eds)));
     }
-  }, [applyEdgeOffsets]);
+
+    setPendingConnect(null);
+    setConnectLabel('');
+    setConnectError('');
+    setShowConnectModal(false);
+  };
 
   // --- MANUAL SELF-LOOP BUTTON ---
   const addSelfLoop = () => {
@@ -136,16 +154,17 @@ function AutomataSimulator() {
       setSelectedNodeForLoop(nodes[0].id);
     }
     setLoopLabel('');
+    setSelfLoopError('');
     setShowSelfLoopModal(true);
   };
 
   const handleSaveSelfLoop = () => {
     if (!selectedNodeForLoop) {
-      alert('Please select a state.');
+      setSelfLoopError('Please select a state.');
       return;
     }
     if (!loopLabel) {
-      alert('Please enter a transition symbol.');
+      setSelfLoopError('Please enter a transition symbol.');
       return;
     }
 
@@ -160,6 +179,7 @@ function AutomataSimulator() {
     }]));
 
     setShowSelfLoopModal(false);
+    setSelfLoopError('');
   };
 
   const addState = () => {
@@ -353,14 +373,45 @@ function AutomataSimulator() {
               <input
                 type="text"
                 value={loopLabel}
-                onChange={(e) => setLoopLabel(e.target.value)}
+                onChange={(e) => { setLoopLabel(e.target.value); setSelfLoopError(''); }}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleSaveSelfLoop(); }}
                 placeholder="e.g. a, b"
                 style={inputStyle}
               />
+              {selfLoopError && <div style={{ color: 'red', marginTop: '6px' }}>{selfLoopError}</div>}
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-              <button onClick={() => setShowSelfLoopModal(false)} style={btnStyle('#95a5a6')}>Cancel</button>
+              <button onClick={() => { setShowSelfLoopModal(false); setSelfLoopError(''); }} style={btnStyle('#95a5a6')}>Cancel</button>
               <button onClick={handleSaveSelfLoop} style={btnStyle('#2ecc71')}>Save</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showConnectModal && (
+        <div style={modalOverlayStyle}>
+          <div style={modalContentStyle}>
+            <h3>Add Transition</h3>
+            <div style={{ marginBottom: '10px' }}>
+              <label style={{ display: 'block', marginBottom: '5px' }}>From → To:</label>
+              <div style={{ padding: '8px 10px', background: '#f7f7f7', borderRadius: '4px' }}>
+                {pendingConnect ? `${pendingConnect.source} → ${pendingConnect.target}` : ''}
+              </div>
+            </div>
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '5px' }}>Transition Symbol:</label>
+              <input
+                type="text"
+                value={connectLabel}
+                onChange={(e) => { setConnectLabel(e.target.value); setConnectError(''); }}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleSaveConnection(); }}
+                placeholder="e.g. a, b"
+                style={inputStyle}
+              />
+              {connectError && <div style={{ color: 'red', marginTop: '6px' }}>{connectError}</div>}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button onClick={() => { setShowConnectModal(false); setPendingConnect(null); setConnectError(''); }} style={btnStyle('#95a5a6')}>Cancel</button>
+              <button onClick={handleSaveConnection} style={btnStyle('#2ecc71')}>Save</button>
             </div>
           </div>
         </div>
