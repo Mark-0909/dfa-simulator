@@ -72,6 +72,14 @@ export default function CircularNode({ data, id, selected }) {
                     window.addEventListener('mouseup', onMouseUp);
                 };
                 
+                // Determine the nearest cardinal Position for the RF Handle
+                const deg = ((angle % 360) + 360) % 360;
+                let handlePosition = Position.Top;
+                if (deg >= 315 || deg < 45) handlePosition = Position.Right;
+                else if (deg >= 45 && deg < 135) handlePosition = Position.Bottom;
+                else if (deg >= 135 && deg < 225) handlePosition = Position.Left;
+                else handlePosition = Position.Top;
+
                 return (
                     <div
                         key={`handle-${idx}`}
@@ -93,7 +101,7 @@ export default function CircularNode({ data, id, selected }) {
                         {/* Actual RF Handles (hidden/stacked) */}
                         <Handle
                             type="source"
-                            position={Position.Top}
+                            position={handlePosition}
                             id={`source-${idx}`}
                             style={{
                                 opacity: 0,
@@ -102,7 +110,7 @@ export default function CircularNode({ data, id, selected }) {
                         />
                         <Handle
                             type="target"
-                            position={Position.Top}
+                            position={handlePosition}
                             id={`target-${idx}`}
                             isConnectableStart={false}
                             style={{
