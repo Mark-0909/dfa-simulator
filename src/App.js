@@ -11,6 +11,7 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import SelfLoopEdge from './SelfLoopEdge';
+import AdjustableBezierEdge from './AdjustableBezierEdge';
 import CircularNode from './CircularNode';
 import ContextMenu from './ContextMenu';
 
@@ -18,7 +19,8 @@ import ContextMenu from './ContextMenu';
 const nodeStyle = {
   borderRadius: '50%', width: 60, height: 60,
   display: 'flex', alignItems: 'center', justifyContent: 'center',
-  backgroundColor: '#fff', border: '2px solid #2c3e50',
+  // Make node fill semi-transparent so edges remain visible underneath
+  backgroundColor: 'rgba(255,255,255,0.6)', border: '2px solid #2c3e50',
   fontWeight: 'bold', fontSize: '14px'
 };
 
@@ -26,6 +28,7 @@ const finalStyle = { ...nodeStyle, border: '5px double #2c3e50' };
 
 const edgeTypes = {
   selfLoop: SelfLoopEdge,
+  adjustableBezier: AdjustableBezierEdge,
 };
 
 const nodeTypes = {
@@ -50,10 +53,35 @@ function AutomataSimulator() {
   }, []);
 
 
-  const [edges, setEdges] = useState([
-    { id: 'e1', source: 'q0', target: 'q1', label: 'a', style: { strokeWidth: 2, stroke: '#2c3e50' }, markerEnd: { type: MarkerType.ArrowClosed, color: '#2c3e50' }, type: 'smoothstep' },
-    { id: 'e2', source: 'q0', target: 'q2', label: 'b', style: { strokeWidth: 2, stroke: '#2c3e50' }, markerEnd: { type: MarkerType.ArrowClosed, color: '#2c3e50' }, type: 'smoothstep' }
-  ]);
+  const baseEdges = [
+    { id: 'e1', source: 'q0', target: 'q1', label: 'a', style: { strokeWidth: 2, stroke: '#2c3e50' }, markerEnd: { type: MarkerType.ArrowClosed, color: '#2c3e50' }, type: 'adjustableBezier' },
+    { id: 'e2', source: 'q0', target: 'q2', label: 'b', style: { strokeWidth: 2, stroke: '#2c3e50' }, markerEnd: { type: MarkerType.ArrowClosed, color: '#2c3e50' }, type: 'adjustableBezier' }
+  ];
+
+  const applyEdgeOffsets = useCallback((eds) => {
+    const bySource = new Map();
+    eds.forEach((e) => {
+      if (!bySource.has(e.source)) bySource.set(e.source, []);
+      bySource.get(e.source).push(e);
+    });
+
+    const result = [];
+    bySource.forEach((arr) => {
+      arr.sort((a, b) => a.id.localeCompare(b.id));
+      const n = arr.length;
+      arr.forEach((edge, idx) => {
+        const offset = (idx - (n - 1) / 2) * 10; // spread siblings
+        result.push({
+          ...edge,
+          data: { ...(edge.data || {}), anchorOffset: offset },
+        });
+      });
+    });
+
+    return result;
+  }, []);
+
+  const [edges, setEdges] = useState(() => applyEdgeOffsets(baseEdges));
 
   const [startState, setStartState] = useState('q0');
   const [acceptingStates, setAcceptingStates] = useState(new Set(['q1', 'q2']));
@@ -69,7 +97,10 @@ function AutomataSimulator() {
   const ref = React.useRef(null);
 
   const onNodesChange = useCallback((chs) => setNodes((nds) => applyNodeChanges(chs, nds)), []);
-  const onEdgesChange = useCallback((chs) => setEdges((eds) => applyEdgeChanges(chs, eds)), []);
+  const onEdgesChange = useCallback(
+    (chs) => setEdges((eds) => applyEdgeOffsets(applyEdgeChanges(chs, eds))),
+    [applyEdgeOffsets]
+  );
 
   // --- IMPROVED CONNECTION LOGIC (Handles Self-Loops Visually) ---
   const onConnect = useCallback((params) => {
@@ -88,14 +119,14 @@ function AutomataSimulator() {
 
     if (isSelfLoop) {
       // Force self-loops to use a Bezier curve attached to the top
-      setEdges((eds) => addEdge({
+      setEdges((eds) => applyEdgeOffsets(addEdge({
         ...newEdge,
         type: 'selfLoop',
-      }, eds));
+      }, eds)));
     } else {
-      setEdges((eds) => addEdge({ ...newEdge, type: 'smoothstep' }, eds));
+      setEdges((eds) => applyEdgeOffsets(addEdge({ ...newEdge, type: 'adjustableBezier' }, eds)));
     }
-  }, []);
+  }, [applyEdgeOffsets]);
 
   // --- MANUAL SELF-LOOP BUTTON ---
   const addSelfLoop = () => {
@@ -118,7 +149,7 @@ function AutomataSimulator() {
       return;
     }
 
-    setEdges((eds) => [...eds, {
+    setEdges((eds) => applyEdgeOffsets([...eds, {
       id: `self-${selectedNodeForLoop}-${Date.now()}`,
       source: selectedNodeForLoop,
       target: selectedNodeForLoop,
@@ -126,7 +157,7 @@ function AutomataSimulator() {
       type: 'selfLoop',
       markerEnd: { type: MarkerType.ArrowClosed },
       style: { strokeWidth: 2 }
-    }]);
+    }]));
 
     setShowSelfLoopModal(false);
   };

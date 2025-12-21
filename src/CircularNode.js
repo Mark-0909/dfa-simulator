@@ -4,14 +4,15 @@ import { Handle, Position, useUpdateNodeInternals } from '@xyflow/react';
 const nodeStyle = {
     borderRadius: '50%', width: 60, height: 60,
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#fff', border: '2px solid #2c3e50',
+    // Transparent fill so edges are never visually covered
+    backgroundColor: 'transparent', border: '2px solid #2c3e50',
     fontWeight: 'bold', fontSize: '14px',
     position: 'relative',
     // Ensure we don't get squashed
     minWidth: 60, minHeight: 60
 };
 
-const finalStyle = { ...nodeStyle, border: '5px double #2c3e50' };
+const finalStyle = { ...nodeStyle, border: '5px double #2c3e50', backgroundColor: 'transparent' };
 
 export default function CircularNode({ data, id, selected }) {
     const updateNodeInternals = useUpdateNodeInternals();

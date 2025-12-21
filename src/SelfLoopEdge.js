@@ -1,5 +1,5 @@
-import React from 'react';
-import { BaseEdge, EdgeLabelRenderer, useNodesData } from '@xyflow/react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { BaseEdge, EdgeLabelRenderer, useNodesData, useReactFlow } from '@xyflow/react';
 
 export default function SelfLoopEdge({
     id,
@@ -13,19 +13,29 @@ export default function SelfLoopEdge({
     style = {},
     markerEnd,
     label,
+    selected,
+    data,
 }) {
     // Get the source node data to find the current rotation angle
     const nodesData = useNodesData(source);
     // Default to -90 (Top) if not found
     const angleDeg = nodesData?.data?.angle !== undefined ? nodesData.data.angle : -90;
     const angleRad = (angleDeg * Math.PI) / 180;
+    const anchorOffset = 0;
+    const anchorShift = { x: 0, y: 0 }; // keep loop attached to node with no gap
 
     // Node geometry
-    const radius = 30;
+    const radius = 38;
 
     // Calculate CenterX/CenterY based on Handle Position
     const centerX = sourceX - radius * Math.cos(angleRad);
     const centerY = sourceY - radius * Math.sin(angleRad);
+
+    // Offset loop anchor sideways to spread overlapping loops from same source and allow manual drag shift
+    const tangentX = Math.sin(angleRad);
+    const tangentY = -Math.cos(angleRad);
+    const anchorShiftX = tangentX * anchorOffset + anchorShift.x;
+    const anchorShiftY = tangentY * anchorOffset + anchorShift.y;
 
     // User requested: Start at 9 o'clock, End at 11 o'clock (relative to handle at 12).
     // Handle is at `angleDeg`.
@@ -40,41 +50,80 @@ export default function SelfLoopEdge({
     const endAngle = ((angleDeg + endOffset) * Math.PI) / 180;
 
     // Start point
-    const startX = centerX + radius * Math.cos(startAngle);
-    const startY = centerY + radius * Math.sin(startAngle);
+    const startX = centerX + radius * Math.cos(startAngle) + anchorShiftX;
+    const startY = centerY + radius * Math.sin(startAngle) + anchorShiftY;
 
     // End point
-    const endX = centerX + radius * Math.cos(endAngle);
-    const endY = centerY + radius * Math.sin(endAngle);
+    const endX = centerX + radius * Math.cos(endAngle) + anchorShiftX;
+    const endY = centerY + radius * Math.sin(endAngle) + anchorShiftY;
 
     // Control Points
-    // We want the loop to bulge out between 9 and 11 (around 10 o'clock, -60 degrees).
-    // Let's bias CPs towards -80 (Left-ish) and -40 (Top-ish) relative to handle.
+    // Default bulge angles; can be overridden by edge `data` via dragging.
+    const defaultControl = useMemo(() => {
+        const bulgeAngle1 = ((angleDeg - 85) * Math.PI) / 180;
+        const bulgeAngle2 = ((angleDeg - 35) * Math.PI) / 180;
+        // Bring self-loop handles closer to the loop
+        const cpDist = 40; // How far out
+        return {
+            c1: {
+                x: centerX + (radius + cpDist) * Math.cos(bulgeAngle1) + anchorShiftX,
+                y: centerY + (radius + cpDist) * Math.sin(bulgeAngle1) + anchorShiftY,
+            },
+            c2: {
+                x: centerX + (radius + cpDist) * Math.cos(bulgeAngle2) + anchorShiftX,
+                y: centerY + (radius + cpDist) * Math.sin(bulgeAngle2) + anchorShiftY,
+            },
+        };
+    }, [angleDeg, centerX, centerY, anchorShiftX, anchorShiftY]);
 
+    const c1 = data?.c1 || defaultControl.c1;
+    const c2 = data?.c2 || defaultControl.c2;
 
-
-    // But we need to bulge OUTWARDS.
-    // Actually, simple Bezier logic:
-    // CP1: Start + Vector perpendicular to radius? No.
-    // Let's project outwards radially but rotated slightly towards the loop body.
-
-    // Try bulging at -60 deg offset
-    const bulgeAngle1 = ((angleDeg - 75) * Math.PI) / 180;
-    const bulgeAngle2 = ((angleDeg - 45) * Math.PI) / 180;
-
-    const cpDist = 45; // How far out
-
-    const cp1X = centerX + (radius + cpDist) * Math.cos(bulgeAngle1);
-    const cp1Y = centerY + (radius + cpDist) * Math.sin(bulgeAngle1);
-
-    const cp2X = centerX + (radius + cpDist) * Math.cos(bulgeAngle2);
-    const cp2Y = centerY + (radius + cpDist) * Math.sin(bulgeAngle2);
-
-    const edgePath = `M ${startX} ${startY} C ${cp1X} ${cp1Y}, ${cp2X} ${cp2Y}, ${endX} ${endY}`;
+    const edgePath = `M ${startX} ${startY} C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${endX} ${endY}`;
 
     // Label position: Middle of the loop CPs roughly
-    const labelX = (startX + cp1X + cp2X + endX) / 4;
-    const labelY = (startY + cp1Y + cp2Y + endY) / 4;
+    const labelX = (startX + c1.x + c2.x + endX) / 4;
+    const labelY = (startY + c1.y + c2.y + endY) / 4;
+
+    const { screenToFlowPosition, setEdges } = useReactFlow();
+    const [dragging, setDragging] = useState(null); // 'c1' | 'c2' | null
+    const [showHandles, setShowHandles] = useState(false);
+
+    useEffect(() => {
+        function onMove(e) {
+            if (!dragging) return;
+            const p = screenToFlowPosition({ x: e.clientX, y: e.clientY });
+            setEdges((eds) => eds.map((edge) => {
+                if (edge.id !== id) return edge;
+                const next = { ...(edge.data || {}) };
+                next[dragging] = { x: p.x, y: p.y };
+                return { ...edge, data: next };
+            }));
+        }
+        function onUp() { setDragging(null); }
+
+        window.addEventListener('pointermove', onMove);
+        window.addEventListener('pointerup', onUp);
+        return () => {
+            window.removeEventListener('pointermove', onMove);
+            window.removeEventListener('pointerup', onUp);
+        };
+    }, [dragging, id, screenToFlowPosition, setEdges]);
+
+    const handleStyle = (x, y) => ({
+        position: 'absolute',
+        transform: `translate(-50%, -50%) translate(${x}px, ${y}px)`,
+        width: 12,
+        height: 12,
+        borderRadius: 6,
+        // Always orange for visibility
+        background: '#f39c12',
+        border: '2px solid #2c3e50',
+        cursor: 'grab',
+        boxShadow: '0 0 0 2px rgba(255,255,255,0.8)',
+        pointerEvents: 'all',
+        zIndex: 1000, // ensure above nodes
+    });
 
     return (
         <>
@@ -82,6 +131,8 @@ export default function SelfLoopEdge({
             {label && (
                 <EdgeLabelRenderer>
                     <div
+                        onMouseEnter={() => setShowHandles(true)}
+                        onMouseLeave={() => setShowHandles(false)}
                         style={{
                             position: 'absolute',
                             transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
@@ -93,10 +144,26 @@ export default function SelfLoopEdge({
                             pointerEvents: 'all',
                             border: '1px solid #ccc'
                         }}
-                        className="nodrag nopan"
+                        className="nodrag nopan react-flow__edge-label"
                     >
                         {label}
                     </div>
+                </EdgeLabelRenderer>
+            )}
+            {(selected || showHandles || dragging) && (
+                <EdgeLabelRenderer>
+                    <div
+                        style={handleStyle(c1.x, c1.y)}
+                        onPointerDown={() => setDragging('c1')}
+                        className="nodrag nopan react-flow__edge-label"
+                        title="Drag to adjust loop"
+                    />
+                    <div
+                        style={handleStyle(c2.x, c2.y)}
+                        onPointerDown={() => setDragging('c2')}
+                        className="nodrag nopan react-flow__edge-label"
+                        title="Drag to adjust loop"
+                    />
                 </EdgeLabelRenderer>
             )}
         </>

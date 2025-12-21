@@ -1,3 +1,13 @@
+/* Keep edges visually above nodes while preserving node clicks */
+.react-flow__edges {
+  z-index: 10000 !important;
+  pointer-events: none; /* do not block node interactions */
+}
+
+/* Labels/handles rendered via EdgeLabelRenderer should remain interactive */
+.react-flow__edge-label {
+  pointer-events: all;
+}
 .App {
   text-align: center;
 }
