@@ -57,6 +57,7 @@ export default function AdjustableBezierEdge(props) {
     };
   }, [sX, sY, targetX, targetY]);
 
+<<<<<<< HEAD
   const c1 = data?.c1 ?? initial.c1;
   const c2 = data?.c2 ?? initial.c2;
 
@@ -111,6 +112,30 @@ export default function AdjustableBezierEdge(props) {
       }));
       setDragging(null);
     }
+=======
+  const c1 = data?.c1 || initial.c1;
+  const c2 = data?.c2 || initial.c2;
+
+  const path = `M ${sX} ${sY} C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${targetX} ${targetY}`;
+  const mid = cubicPoint(0.5, { x: sX, y: sY }, c1, c2, { x: targetX, y: targetY });
+
+  const [dragging, setDragging] = useState(null); // 'c1' | 'c2' | null
+  const [showHandles, setShowHandles] = useState(false);
+  const [draggingAnchor, setDraggingAnchor] = useState(false);
+
+  useEffect(() => {
+    function onMove(e) {
+      if (!dragging) return;
+      const p = screenToFlowPosition({ x: e.clientX, y: e.clientY });
+      setEdges((eds) => eds.map((edge) => {
+        if (edge.id !== id) return edge;
+        const next = { ...(edge.data || {}) };
+        next[dragging] = { x: p.x, y: p.y };
+        return { ...edge, data: next };
+      }));
+    }
+    function onUp() { setDragging(null); }
+>>>>>>> origin/main
 
     window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerup', onUp);
@@ -118,7 +143,11 @@ export default function AdjustableBezierEdge(props) {
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
     };
+<<<<<<< HEAD
   }, [dragging, id, screenToFlowPosition, setEdges]); // Removed localC1/localC2 from deps!
+=======
+  }, [dragging, id, screenToFlowPosition, setEdges]);
+>>>>>>> origin/main
 
   const handleStyle = (x, y) => ({
     position: 'absolute',
@@ -163,13 +192,21 @@ export default function AdjustableBezierEdge(props) {
       {(selected || showHandles || dragging) && (
         <EdgeLabelRenderer>
           <div
+<<<<<<< HEAD
             style={handleStyle(renderC1.x, renderC1.y)}
+=======
+            style={handleStyle(c1.x, c1.y)}
+>>>>>>> origin/main
             onPointerDown={() => setDragging('c1')}
             className="nodrag nopan react-flow__edge-label"
             title="Drag to adjust curve"
           />
           <div
+<<<<<<< HEAD
             style={handleStyle(renderC2.x, renderC2.y)}
+=======
+            style={handleStyle(c2.x, c2.y)}
+>>>>>>> origin/main
             onPointerDown={() => setDragging('c2')}
             className="nodrag nopan react-flow__edge-label"
             title="Drag to adjust curve"

@@ -11,6 +11,7 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import SelfLoopEdge from './SelfLoopEdge';
+import AdjustableBezierEdge from './AdjustableBezierEdge';
 import CircularNode from './CircularNode';
 import ContextMenu from './ContextMenu';
 
@@ -18,7 +19,8 @@ import ContextMenu from './ContextMenu';
 const nodeStyle = {
   borderRadius: '50%', width: 60, height: 60,
   display: 'flex', alignItems: 'center', justifyContent: 'center',
-  backgroundColor: '#fff', border: '2px solid #2c3e50',
+  // Make node fill semi-transparent so edges remain visible underneath
+  backgroundColor: 'rgba(255,255,255,0.6)', border: '2px solid #2c3e50',
   fontWeight: 'bold', fontSize: '14px'
 };
 
@@ -26,6 +28,7 @@ const finalStyle = { ...nodeStyle, border: '5px double #2c3e50' };
 
 const edgeTypes = {
   selfLoop: SelfLoopEdge,
+  adjustableBezier: AdjustableBezierEdge,
 };
 
 const nodeTypes = {
@@ -50,10 +53,35 @@ function AutomataSimulator() {
   }, []);
 
 
-  const [edges, setEdges] = useState([
-    { id: 'e1', source: 'q0', target: 'q1', label: 'a', style: { strokeWidth: 2, stroke: '#2c3e50' }, markerEnd: { type: MarkerType.ArrowClosed, color: '#2c3e50' }, type: 'smoothstep' },
-    { id: 'e2', source: 'q0', target: 'q2', label: 'b', style: { strokeWidth: 2, stroke: '#2c3e50' }, markerEnd: { type: MarkerType.ArrowClosed, color: '#2c3e50' }, type: 'smoothstep' }
-  ]);
+  const baseEdges = [
+    { id: 'e1', source: 'q0', target: 'q1', label: 'a', style: { strokeWidth: 2, stroke: '#2c3e50' }, markerEnd: { type: MarkerType.ArrowClosed, color: '#2c3e50' }, type: 'adjustableBezier' },
+    { id: 'e2', source: 'q0', target: 'q2', label: 'b', style: { strokeWidth: 2, stroke: '#2c3e50' }, markerEnd: { type: MarkerType.ArrowClosed, color: '#2c3e50' }, type: 'adjustableBezier' }
+  ];
+
+  const applyEdgeOffsets = useCallback((eds) => {
+    const bySource = new Map();
+    eds.forEach((e) => {
+      if (!bySource.has(e.source)) bySource.set(e.source, []);
+      bySource.get(e.source).push(e);
+    });
+
+    const result = [];
+    bySource.forEach((arr) => {
+      arr.sort((a, b) => a.id.localeCompare(b.id));
+      const n = arr.length;
+      arr.forEach((edge, idx) => {
+        const offset = (idx - (n - 1) / 2) * 10; // spread siblings
+        result.push({
+          ...edge,
+          data: { ...(edge.data || {}), anchorOffset: offset },
+        });
+      });
+    });
+
+    return result;
+  }, []);
+
+  const [edges, setEdges] = useState(() => applyEdgeOffsets(baseEdges));
 
   const [startState, setStartState] = useState('q0');
   const [acceptingStates, setAcceptingStates] = useState(new Set(['q1', 'q2']));
@@ -63,39 +91,60 @@ function AutomataSimulator() {
   const [showSelfLoopModal, setShowSelfLoopModal] = useState(false);
   const [selectedNodeForLoop, setSelectedNodeForLoop] = useState('');
   const [loopLabel, setLoopLabel] = useState('');
+  const [showConnectModal, setShowConnectModal] = useState(false);
+  const [pendingConnect, setPendingConnect] = useState(null);
+  const [connectLabel, setConnectLabel] = useState('');
+  const [connectError, setConnectError] = useState('');
+  const [selfLoopError, setSelfLoopError] = useState('');
 
   // Context Menu State
   const [menu, setMenu] = useState(null);
   const ref = React.useRef(null);
 
   const onNodesChange = useCallback((chs) => setNodes((nds) => applyNodeChanges(chs, nds)), []);
-  const onEdgesChange = useCallback((chs) => setEdges((eds) => applyEdgeChanges(chs, eds)), []);
+  const onEdgesChange = useCallback(
+    (chs) => setEdges((eds) => applyEdgeOffsets(applyEdgeChanges(chs, eds))),
+    [applyEdgeOffsets]
+  );
 
   // --- IMPROVED CONNECTION LOGIC (Handles Self-Loops Visually) ---
   const onConnect = useCallback((params) => {
-    const label = prompt('Enter transition symbol (e.g., a or b):');
-    if (!label) return;
+    // Open the custom connection modal instead of using window.prompt
+    setPendingConnect(params);
+    setConnectLabel('');
+    setConnectError('');
+    setShowConnectModal(true);
+  }, []);
 
+  const handleSaveConnection = () => {
+    if (!pendingConnect) return setShowConnectModal(false);
+    if (!connectLabel) {
+      setConnectError('Please enter a transition symbol.');
+      return;
+    }
+
+    const params = pendingConnect;
     const isSelfLoop = params.source === params.target;
 
     const newEdge = {
       ...params,
       id: `e-${params.source}-${params.target}-${Date.now()}`,
-      label,
+      label: connectLabel,
       markerEnd: { type: MarkerType.ArrowClosed, color: '#2c3e50' },
       style: { strokeWidth: 2, stroke: '#2c3e50' },
     };
 
     if (isSelfLoop) {
-      // Force self-loops to use a Bezier curve attached to the top
-      setEdges((eds) => addEdge({
-        ...newEdge,
-        type: 'selfLoop',
-      }, eds));
+      setEdges((eds) => applyEdgeOffsets(addEdge({ ...newEdge, type: 'selfLoop' }, eds)));
     } else {
-      setEdges((eds) => addEdge({ ...newEdge, type: 'smoothstep' }, eds));
+      setEdges((eds) => applyEdgeOffsets(addEdge({ ...newEdge, type: 'adjustableBezier' }, eds)));
     }
-  }, []);
+
+    setPendingConnect(null);
+    setConnectLabel('');
+    setConnectError('');
+    setShowConnectModal(false);
+  };
 
   // --- MANUAL SELF-LOOP BUTTON ---
   const addSelfLoop = () => {
@@ -105,20 +154,21 @@ function AutomataSimulator() {
       setSelectedNodeForLoop(nodes[0].id);
     }
     setLoopLabel('');
+    setSelfLoopError('');
     setShowSelfLoopModal(true);
   };
 
   const handleSaveSelfLoop = () => {
     if (!selectedNodeForLoop) {
-      alert('Please select a state.');
+      setSelfLoopError('Please select a state.');
       return;
     }
     if (!loopLabel) {
-      alert('Please enter a transition symbol.');
+      setSelfLoopError('Please enter a transition symbol.');
       return;
     }
 
-    setEdges((eds) => [...eds, {
+    setEdges((eds) => applyEdgeOffsets([...eds, {
       id: `self-${selectedNodeForLoop}-${Date.now()}`,
       source: selectedNodeForLoop,
       target: selectedNodeForLoop,
@@ -126,9 +176,10 @@ function AutomataSimulator() {
       type: 'selfLoop',
       markerEnd: { type: MarkerType.ArrowClosed },
       style: { strokeWidth: 2 }
-    }]);
+    }]));
 
     setShowSelfLoopModal(false);
+    setSelfLoopError('');
   };
 
   const addState = () => {
@@ -190,15 +241,23 @@ function AutomataSimulator() {
       // Prevent native context menu from showing
       event.preventDefault();
 
-      // Calculate position
-      // Using clientX/Y implies positioning relative to viewport, but we need to consider the canvas.
-      // Actually, React Flow pane has its own coordinate system, but for a fixed overlay, client coordinates act as absolute position.
-      // We'll use event.clientX and event.clientY for the fixed overlay.
-
-
-
       setMenu({
         id: node.id,
+        type: 'node',
+        top: event.clientY,
+        left: event.clientX,
+      });
+    },
+    [setMenu],
+  );
+
+  const onEdgeContextMenu = useCallback(
+    (event, edge) => {
+      event.preventDefault();
+
+      setMenu({
+        id: edge.id,
+        type: 'edge',
         top: event.clientY,
         left: event.clientX,
       });
@@ -219,6 +278,8 @@ function AutomataSimulator() {
         setAcceptingStates(newSet);
       }
       if (startState === id) setStartState('');
+    } else if (action === 'deleteEdge') {
+      setEdges((eds) => eds.filter((e) => e.id !== id));
     } else if (action === 'final') {
       toggleAccepting(id);
     }
@@ -281,6 +342,7 @@ function AutomataSimulator() {
             toggleAccepting(n.id);
           }}
           onNodeContextMenu={onNodeContextMenu}
+          onEdgeContextMenu={onEdgeContextMenu}
           onPaneClick={onPaneClick}
           fitView
         >
@@ -311,14 +373,45 @@ function AutomataSimulator() {
               <input
                 type="text"
                 value={loopLabel}
-                onChange={(e) => setLoopLabel(e.target.value)}
+                onChange={(e) => { setLoopLabel(e.target.value); setSelfLoopError(''); }}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleSaveSelfLoop(); }}
                 placeholder="e.g. a, b"
                 style={inputStyle}
               />
+              {selfLoopError && <div style={{ color: 'red', marginTop: '6px' }}>{selfLoopError}</div>}
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-              <button onClick={() => setShowSelfLoopModal(false)} style={btnStyle('#95a5a6')}>Cancel</button>
+              <button onClick={() => { setShowSelfLoopModal(false); setSelfLoopError(''); }} style={btnStyle('#95a5a6')}>Cancel</button>
               <button onClick={handleSaveSelfLoop} style={btnStyle('#2ecc71')}>Save</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showConnectModal && (
+        <div style={modalOverlayStyle}>
+          <div style={modalContentStyle}>
+            <h3>Add Transition</h3>
+            <div style={{ marginBottom: '10px' }}>
+              <label style={{ display: 'block', marginBottom: '5px' }}>From → To:</label>
+              <div style={{ padding: '8px 10px', background: '#f7f7f7', borderRadius: '4px' }}>
+                {pendingConnect ? `${pendingConnect.source} → ${pendingConnect.target}` : ''}
+              </div>
+            </div>
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '5px' }}>Transition Symbol:</label>
+              <input
+                type="text"
+                value={connectLabel}
+                onChange={(e) => { setConnectLabel(e.target.value); setConnectError(''); }}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleSaveConnection(); }}
+                placeholder="e.g. a, b"
+                style={inputStyle}
+              />
+              {connectError && <div style={{ color: 'red', marginTop: '6px' }}>{connectError}</div>}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button onClick={() => { setShowConnectModal(false); setPendingConnect(null); setConnectError(''); }} style={btnStyle('#95a5a6')}>Cancel</button>
+              <button onClick={handleSaveConnection} style={btnStyle('#2ecc71')}>Save</button>
             </div>
           </div>
         </div>
