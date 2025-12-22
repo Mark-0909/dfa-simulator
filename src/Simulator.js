@@ -46,6 +46,9 @@ function AutomataSimulator() {
 
   // Attach angle change handler to initial nodes
   useEffect(() => {
+    // The mapping creates closure handlers per-node. Disable the eslint
+    // rule here because each handler intentionally captures the node id.
+    // eslint-disable-next-line no-loop-func
     setNodes((nds) => nds.map(n => ({
       ...n,
       data: { ...n.data, onAngleChange: (a) => updateNodeAngle(n.id, a) }
