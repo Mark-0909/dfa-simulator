@@ -23,12 +23,9 @@ export default function SelfLoopEdge({
     const angleRad = (angleDeg * Math.PI) / 180;
     const anchorOffset = 0;
     const anchorShift = { x: 0, y: 0 }; // keep loop attached to node with no gap
-<<<<<<< HEAD
 
     // Get ReactFlow instance specifically for screenToFlowPosition
     const { screenToFlowPosition, setEdges } = useReactFlow();
-=======
->>>>>>> origin/main
 
     // Node geometry
     const radius = 38;
@@ -85,7 +82,6 @@ export default function SelfLoopEdge({
     const c1 = data?.c1 || defaultControl.c1;
     const c2 = data?.c2 || defaultControl.c2;
 
-<<<<<<< HEAD
     const [dragging, setDragging] = useState(null); // 'c1' | 'c2' | null
     const [showHandles, setShowHandles] = useState(false);
 
@@ -138,30 +134,6 @@ export default function SelfLoopEdge({
             }));
             setDragging(null);
         }
-=======
-    const edgePath = `M ${startX} ${startY} C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${endX} ${endY}`;
-
-    // Label position: Middle of the loop CPs roughly
-    const labelX = (startX + c1.x + c2.x + endX) / 4;
-    const labelY = (startY + c1.y + c2.y + endY) / 4;
-
-    const { screenToFlowPosition, setEdges } = useReactFlow();
-    const [dragging, setDragging] = useState(null); // 'c1' | 'c2' | null
-    const [showHandles, setShowHandles] = useState(false);
-
-    useEffect(() => {
-        function onMove(e) {
-            if (!dragging) return;
-            const p = screenToFlowPosition({ x: e.clientX, y: e.clientY });
-            setEdges((eds) => eds.map((edge) => {
-                if (edge.id !== id) return edge;
-                const next = { ...(edge.data || {}) };
-                next[dragging] = { x: p.x, y: p.y };
-                return { ...edge, data: next };
-            }));
-        }
-        function onUp() { setDragging(null); }
->>>>>>> origin/main
 
         window.addEventListener('pointermove', onMove);
         window.addEventListener('pointerup', onUp);
@@ -214,21 +186,13 @@ export default function SelfLoopEdge({
             {(selected || showHandles || dragging) && (
                 <EdgeLabelRenderer>
                     <div
-<<<<<<< HEAD
                         style={handleStyle(renderC1.x, renderC1.y)}
-=======
-                        style={handleStyle(c1.x, c1.y)}
->>>>>>> origin/main
                         onPointerDown={() => setDragging('c1')}
                         className="nodrag nopan react-flow__edge-label"
                         title="Drag to adjust loop"
                     />
                     <div
-<<<<<<< HEAD
                         style={handleStyle(renderC2.x, renderC2.y)}
-=======
-                        style={handleStyle(c2.x, c2.y)}
->>>>>>> origin/main
                         onPointerDown={() => setDragging('c2')}
                         className="nodrag nopan react-flow__edge-label"
                         title="Drag to adjust loop"
