@@ -14,17 +14,22 @@ const nodeStyle = {
 
 const finalStyle = { ...nodeStyle, boxShadow: 'inset 0 0 0 2px #2c3e50', backgroundColor: 'transparent' };
 
+const baseAngles = [-90, 0, 90, 180]; // degrees
+
 export default function CircularNode({ data, id, selected }) {
     const updateNodeInternals = useUpdateNodeInternals();
-    
+
     // Support multiple handles around the circle
     const numHandles = 4; // top, right, bottom, left
-    const baseAngles = [-90, 0, 90, 180]; // degrees
-    
+
     const angles = data.angles || baseAngles;
 
+    const prevAngles = React.useRef(angles);
     useEffect(() => {
-        updateNodeInternals(id);
+        if (prevAngles.current !== angles) {
+            updateNodeInternals(id);
+            prevAngles.current = angles;
+        }
     }, [angles, id, updateNodeInternals]);
 
     const isFinal = data.isFinal;
@@ -39,39 +44,39 @@ export default function CircularNode({ data, id, selected }) {
                 const rad = (angle * Math.PI) / 180;
                 const handleX = 50 + 50 * Math.cos(rad);
                 const handleY = 50 + 50 * Math.sin(rad);
-                
+
                 const handleMouseDownForHandle = (e) => {
                     e.stopPropagation();
                     e.preventDefault();
-                    
+
                     const onMouseMove = (moveEvent) => {
                         const nodeEl = e.target.closest('.react-flow__node');
                         if (!nodeEl) return;
-                        
+
                         const rect = nodeEl.getBoundingClientRect();
                         const centerX = rect.left + rect.width / 2;
                         const centerY = rect.top + rect.height / 2;
-                        
+
                         const dx = moveEvent.clientX - centerX;
                         const dy = moveEvent.clientY - centerY;
-                        
+
                         let deg = Math.atan2(dy, dx) * (180 / Math.PI);
                         if (deg < 0) deg += 360;
-                        
+
                         if (data.onAngleChange) {
                             data.onAngleChange(deg, idx);
                         }
                     };
-                    
+
                     const onMouseUp = () => {
                         window.removeEventListener('mousemove', onMouseMove);
                         window.removeEventListener('mouseup', onMouseUp);
                     };
-                    
+
                     window.addEventListener('mousemove', onMouseMove);
                     window.addEventListener('mouseup', onMouseUp);
                 };
-                
+
                 // Determine the nearest cardinal Position for the RF Handle
                 const deg = ((angle % 360) + 360) % 360;
                 let handlePosition = Position.Top;
@@ -97,7 +102,6 @@ export default function CircularNode({ data, id, selected }) {
                         className="nodrag">
                         {/* Visible Handle Dot */}
                         <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#34495e' }} />
-                        
                         {/* Actual RF Handles (hidden/stacked) */}
                         <Handle
                             type="source"
