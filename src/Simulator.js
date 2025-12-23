@@ -197,11 +197,9 @@ function AutomataSimulator() {
 
   const addState = () => {
     // Find the lowest available id
+    const existingIds = new Set(nodes.map(n => n.id));
     let i = 0;
-    while (true) {
-      if (!nodes.find(n => n.id === `q${i}`)) {
-        break;
-      }
+    while (existingIds.has(`q${i}`)) {
       i++;
     }
     const id = `q${i}`;
