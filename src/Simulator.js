@@ -171,6 +171,12 @@ function AutomataSimulator() {
       return;
     }
 
+    // Check if this node already has self-loops and offset the angle
+    const existingSelfLoops = edges.filter(e => e.source === selectedNodeForLoop && e.target === selectedNodeForLoop);
+    const baseAngle = -90; // Top position
+    const angleOffset = existingSelfLoops.length * 60; // Offset by 60 degrees for each existing loop
+    const loopAngle = baseAngle + angleOffset;
+
     setEdges((eds) => applyEdgeOffsets([...eds, {
       id: `self-${selectedNodeForLoop}-${Date.now()}`,
       source: selectedNodeForLoop,
@@ -178,7 +184,8 @@ function AutomataSimulator() {
       label: loopLabel,
       type: 'selfLoop',
       markerEnd: { type: MarkerType.ArrowClosed },
-      style: { strokeWidth: 2 }
+      style: { strokeWidth: 2 },
+      data: { loopAngle }
     }]));
 
     setShowSelfLoopModal(false);
