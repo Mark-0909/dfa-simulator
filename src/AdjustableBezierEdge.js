@@ -131,7 +131,7 @@ export default function AdjustableBezierEdge(props) {
     cursor: 'grab',
     boxShadow: '0 0 0 2px rgba(255,255,255,0.8)',
     pointerEvents: 'all',
-    zIndex: 1000,
+    zIndex: 10000,
   });
 
   return (
@@ -152,6 +152,7 @@ export default function AdjustableBezierEdge(props) {
               fontWeight: 700,
               pointerEvents: 'all',
               border: '1px solid #ccc',
+              zIndex: 10000,
             }}
             className="nodrag nopan react-flow__edge-label"
           >

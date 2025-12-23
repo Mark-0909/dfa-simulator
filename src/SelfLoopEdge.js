@@ -16,6 +16,8 @@ export default function SelfLoopEdge({
     selected,
     data,
 }) {
+    // Access React Flow API early so helpers are available for geometry
+    const { screenToFlowPosition, setEdges } = useReactFlow();
     // Get the source node data to find the current rotation angle
     const nodesData = useNodesData(source);
     // Base anchor angle from node (where the handle sits)
@@ -23,24 +25,48 @@ export default function SelfLoopEdge({
     const anchorAngleRad = (anchorAngleDeg * Math.PI) / 180;
 
     // Loop-specific angle (can be rotated independently of the node anchor)
-    const loopAngleDeg = data?.loopAngle !== undefined ? data.loopAngle : anchorAngleDeg;
+    // Keep self-loop orientation independent of node handle selection
+    const loopAngleDeg = data?.loopAngle !== undefined ? data.loopAngle : -90;
     const loopAngleRad = (loopAngleDeg * Math.PI) / 180;
     const anchorOffset = 0;
     const anchorShift = { x: 0, y: 0 }; // keep loop attached to node with no gap
 
-    // Get ReactFlow instance specifically for screenToFlowPosition
-    const { screenToFlowPosition, setEdges } = useReactFlow();
-
     // Node geometry
     const radius = 38;
 
-    // Calculate CenterX/CenterY based on Handle Position
-    const centerX = sourceX - radius * Math.cos(anchorAngleRad);
-    const centerY = sourceY - radius * Math.sin(anchorAngleRad);
+    // Calculate CenterX/CenterY based on the cardinal handle so rotation follows the state
+    let centerX;
+    let centerY;
+    switch (sourcePosition) {
+        case 'Top':
+        case 'top':
+            centerX = sourceX;
+            centerY = sourceY + radius;
+            break;
+        case 'Right':
+        case 'right':
+            centerX = sourceX - radius;
+            centerY = sourceY;
+            break;
+        case 'Bottom':
+        case 'bottom':
+            centerX = sourceX;
+            centerY = sourceY - radius;
+            break;
+        case 'Left':
+        case 'left':
+            centerX = sourceX + radius;
+            centerY = sourceY;
+            break;
+        default:
+            centerX = sourceX - radius * Math.cos(anchorAngleRad);
+            centerY = sourceY - radius * Math.sin(anchorAngleRad);
+            break;
+    }
 
     // Offset loop anchor sideways to spread overlapping loops from same source and allow manual drag shift
-    const tangentX = Math.sin(anchorAngleRad);
-    const tangentY = -Math.cos(anchorAngleRad);
+    const tangentX = Math.sin(loopAngleRad);
+    const tangentY = -Math.cos(loopAngleRad);
     const anchorShiftX = tangentX * anchorOffset + anchorShift.x;
     const anchorShiftY = tangentY * anchorOffset + anchorShift.y;
 
@@ -86,38 +112,15 @@ export default function SelfLoopEdge({
     const c1 = data?.c1 || defaultControl.c1;
     const c2 = data?.c2 || defaultControl.c2;
 
-
-    const [dragging, setDragging] = useState(null); // 'c1' | 'c2' | 'angle' | null
-    const [showHandles, setShowHandles] = useState(false);
-
-    // Local state for immediate visual feedback
-    const [localC1, setLocalC1] = useState(c1);
-    const [localC2, setLocalC2] = useState(c2);
-
-    // Sync local state when props change (if not dragging)
-    useEffect(() => {
-        if (!dragging) {
-            setLocalC1(c1);
-            setLocalC2(c2);
-        }
-    }, [c1, c2, dragging]);
-
-    // Optimize: Use refs for mutable values
-    const pointers = React.useRef({ localC1, localC2 });
-    useEffect(() => {
-        pointers.current = { localC1, localC2 };
-    }, [localC1, localC2]);
-
-    // Use local points for rendering
-    const renderC1 = dragging ? localC1 : c1;
-    const renderC2 = dragging ? localC2 : c2;
-
-    // Recalculate edge path with render points
-    const edgePath = `M ${startX} ${startY} C ${renderC1.x} ${renderC1.y}, ${renderC2.x} ${renderC2.y}, ${endX} ${endY}`;
+    const edgePath = `M ${startX} ${startY} C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${endX} ${endY}`;
 
     // Label position: Middle of the loop CPs roughly
-    const labelX = (startX + renderC1.x + renderC2.x + endX) / 4;
-    const labelY = (startY + renderC1.y + renderC2.y + endY) / 4;
+    const labelX = (startX + c1.x + c2.x + endX) / 4;
+    const labelY = (startY + c1.y + c2.y + endY) / 4;
+
+    
+    const [dragging, setDragging] = useState(null); // 'c1' | 'c2' | 'angle' | null
+    const [showHandles, setShowHandles] = useState(false);
 
     useEffect(() => {
         if (!dragging) return;
@@ -125,9 +128,17 @@ export default function SelfLoopEdge({
         function onMove(e) {
             const p = screenToFlowPosition({ x: e.clientX, y: e.clientY });
 
-            if (dragging === 'c1') setLocalC1({ x: p.x, y: p.y });
-            else if (dragging === 'c2') setLocalC2({ x: p.x, y: p.y });
-            else if (dragging === 'angle') {
+            if (dragging === 'c1' || dragging === 'c2') {
+                setEdges((eds) => eds.map((edge) => {
+                    if (edge.id !== id) return edge;
+                    const next = { ...(edge.data || {}) };
+                    next[dragging] = { x: p.x, y: p.y };
+                    return { ...edge, data: next };
+                }));
+                return;
+            }
+
+            if (dragging === 'angle') {
                 const dx = p.x - centerX;
                 const dy = p.y - centerY;
                 const newAngle = Math.atan2(dy, dx) * (180 / Math.PI);
@@ -142,18 +153,7 @@ export default function SelfLoopEdge({
             }
         }
 
-        function onUp() {
-            if (dragging === 'c1' || dragging === 'c2') {
-                setEdges((eds) => eds.map((edge) => {
-                    if (edge.id !== id) return edge;
-                    const next = { ...(edge.data || {}) };
-                    if (dragging === 'c1') next.c1 = pointers.current.localC1;
-                    if (dragging === 'c2') next.c2 = pointers.current.localC2;
-                    return { ...edge, data: next };
-                }));
-            }
-            setDragging(null);
-        }
+        function onUp() { setDragging(null); }
 
         window.addEventListener('pointermove', onMove);
         window.addEventListener('pointerup', onUp);
@@ -162,8 +162,6 @@ export default function SelfLoopEdge({
             window.removeEventListener('pointerup', onUp);
         };
     }, [dragging, id, screenToFlowPosition, setEdges, centerX, centerY]);
-
-
 
     const handleStyle = (x, y) => ({
         position: 'absolute',
@@ -177,7 +175,7 @@ export default function SelfLoopEdge({
         cursor: 'grab',
         boxShadow: '0 0 0 2px rgba(255,255,255,0.8)',
         pointerEvents: 'all',
-        zIndex: 1000, // ensure above nodes
+        zIndex: 10000, // ensure above all contents
     });
 
     // Rotation handle: visible rotate icon; still draggable
@@ -221,7 +219,8 @@ export default function SelfLoopEdge({
                             fontSize: 12,
                             fontWeight: 700,
                             pointerEvents: 'all',
-                            border: '1px solid #ccc'
+                            border: '1px solid #ccc',
+                            zIndex: 10000
                         }}
                         className="nodrag nopan react-flow__edge-label"
                     >
@@ -232,13 +231,13 @@ export default function SelfLoopEdge({
             {(selected || showHandles || dragging) && (
                 <EdgeLabelRenderer>
                     <div
-                        style={handleStyle(renderC1.x, renderC1.y)}
+                        style={handleStyle(c1.x, c1.y)}
                         onPointerDown={() => setDragging('c1')}
                         className="nodrag nopan react-flow__edge-label"
                         title="Drag to adjust loop"
                     />
                     <div
-                        style={handleStyle(renderC2.x, renderC2.y)}
+                        style={handleStyle(c2.x, c2.y)}
                         onPointerDown={() => setDragging('c2')}
                         className="nodrag nopan react-flow__edge-label"
                         title="Drag to adjust loop"

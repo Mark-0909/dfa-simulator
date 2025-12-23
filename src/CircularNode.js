@@ -20,7 +20,7 @@ export default function CircularNode({ data, id, selected }) {
     const updateNodeInternals = useUpdateNodeInternals();
 
     // Support multiple handles around the circle
-
+    // number of handles intentionally implicit (derived from angles array)
 
     const angles = data.angles || baseAngles;
 
