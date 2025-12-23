@@ -100,6 +100,10 @@ function AutomataSimulator() {
   const [connectError, setConnectError] = useState('');
   const [selfLoopError, setSelfLoopError] = useState('');
 
+  // Export Modal State
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportFileName, setExportFileName] = useState('my-dfa');
+
   // Context Menu State
   const [menu, setMenu] = useState(null);
   const ref = React.useRef(null);
@@ -330,7 +334,12 @@ function AutomataSimulator() {
     else setTestResult(`❌ Rejected: Ended in non-final state ${current} (Path: ${path.join('->')})`);
   };
 
-  const exportDFA = () => {
+  const handleExportClick = () => {
+    setExportFileName('my-dfa'); // Reset or keep previous? Resetting to default seems safer
+    setShowExportModal(true);
+  };
+
+  const confirmExport = () => {
     const data = {
       nodes,
       edges,
@@ -341,9 +350,10 @@ function AutomataSimulator() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'dfa-config.json';
+    a.download = `${exportFileName || 'my-dfa'}.efn`;
     a.click();
     URL.revokeObjectURL(url);
+    setShowExportModal(false);
   };
 
   const importDFA = (event) => {
@@ -400,12 +410,12 @@ function AutomataSimulator() {
 
           <div style={{ width: '1px', height: '20px', background: '#ddd', margin: '0 10px' }}></div>
 
-          <button onClick={exportDFA} style={btnStyle('#e67e22')} className="sim-btn">Export</button>
+          <button onClick={handleExportClick} style={btnStyle('#e67e22')} className="sim-btn">Export</button>
           <label style={{ ...btnStyle('#16a085'), cursor: 'pointer', display: 'inline-block', margin: 0 }}>
             Import
             <input
               type="file"
-              accept=".json"
+              accept=".efn,.json"
               onChange={importDFA}
               style={{ display: 'none' }}
             />
@@ -497,6 +507,32 @@ function AutomataSimulator() {
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
               <button onClick={() => { setShowConnectModal(false); setPendingConnect(null); setConnectError(''); }} style={btnStyle('#95a5a6')}>Cancel</button>
               <button onClick={handleSaveConnection} style={btnStyle('#2ecc71')}>Save</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showExportModal && (
+        <div style={modalOverlayStyle}>
+          <div style={modalContentStyle}>
+            <h3>Export DFA</h3>
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '5px' }}>Filename:</label>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <input
+                  type="text"
+                  value={exportFileName}
+                  onChange={(e) => setExportFileName(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') confirmExport(); }}
+                  placeholder="Enter filename..."
+                  style={{ ...inputStyle, flex: 1 }}
+                  autoFocus
+                />
+                <span style={{ marginLeft: '8px', fontWeight: 'bold', color: '#666' }}>.efn</span>
+              </div>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button onClick={() => setShowExportModal(false)} style={btnStyle('#95a5a6')}>Cancel</button>
+              <button onClick={confirmExport} style={btnStyle('#e67e22')}>Download</button>
             </div>
           </div>
         </div>
