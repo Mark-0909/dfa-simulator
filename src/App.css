@@ -46,3 +46,74 @@
     transform: rotate(360deg);
   }
 }
+
+/* ---------- Simulator Responsive Styles ---------- */
+.sim-root {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #f5f6fa;
+}
+
+.sim-header {
+  padding: 16px 20px;
+  background: #2c3e50;
+  color: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.sim-toolbar {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.sim-btn {
+  padding: 10px 14px;
+  border-radius: 6px;
+}
+
+.sim-input {
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  flex: 1 1 220px;
+  min-width: 160px;
+}
+
+.sim-flow {
+  flex: 1;
+  position: relative;
+}
+
+/* Place React Flow controls bottom-right for mobile friendliness */
+.sim-flow .react-flow__controls {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  z-index: 30;
+}
+
+/* Edge labels slightly larger and rounded for readability */
+.react-flow__edge-label {
+  font-size: 12px;
+  border-radius: 6px;
+}
+
+@media (max-width: 768px) {
+  .sim-header { padding: 12px; }
+  .sim-toolbar { gap: 8px; }
+  .sim-btn { padding: 12px 16px; font-size: 14px; }
+  .sim-input { font-size: 14px; }
+  .sim-flow .react-flow__controls button { width: 36px; height: 36px; }
+}
+
+@media (max-width: 480px) {
+  .sim-btn { padding: 14px 18px; font-size: 15px; }
+  .react-flow__edge-label { font-size: 13px; }
+}

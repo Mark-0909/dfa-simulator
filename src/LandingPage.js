@@ -1,10 +1,12 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './LandingPage.css';
 
 const LandingPage = () => {
     const navigate = useNavigate();
     const btnRef = useRef(null);
+    const [menuOpen, setMenuOpen] = useState(false);
+    const toggleMenu = () => setMenuOpen((v) => !v);
 
     const handleBtnClick = (e) => {
         // Ripple Effect
@@ -48,10 +50,22 @@ const LandingPage = () => {
                     <a href="#docs">Documentation</a>
                     <a href="https://github.com/your-username/dfa-simulator" target="_blank" rel="noopener noreferrer">GitHub</a>
                 </div>
-                <div>
-                    {/* Placeholder for potential future auth or other actions */}
-                </div>
+                <button
+                    className="mobile-menu-btn"
+                    aria-label="Open navigation menu"
+                    onClick={toggleMenu}
+                >
+                    <span className="hamburger" />
+                </button>
             </header>
+
+            {menuOpen && (
+                <nav className="mobile-menu reveal-up" onClick={() => setMenuOpen(false)}>
+                    <a href="#about">About</a>
+                    <a href="#docs">Documentation</a>
+                    <a href="https://github.com/your-username/dfa-simulator" target="_blank" rel="noopener noreferrer">GitHub</a>
+                </nav>
+            )}
 
             <main className="hero-container">
                 <div className="hero-content">
@@ -139,6 +153,16 @@ const LandingPage = () => {
                             <text x="500" y="255" textAnchor="middle">q₂</text>
                         </g>
                     </svg>
+                </div>
+                {/* Mobile-only bottom CTA: shows after the diagram on small screens */}
+                <div className="mobile-bottom-cta">
+                    <button
+                        className="main-cta"
+                        onClick={handleBtnClick}
+                    >
+                        <span className="glass-glint"></span>
+                        Launch Simulator
+                    </button>
                 </div>
             </main>
         </div>

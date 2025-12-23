@@ -323,25 +323,23 @@ function AutomataSimulator() {
   };
 
   return (
-    <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', background: '#f5f6fa' }}>
-      <header style={{ padding: '20px', background: '#2c3e50', color: '#fff' }}>
+    <div className="sim-root">
+      <header className="sim-header">
         <h2 style={{ margin: 0 }}>DFA Framework Simulator</h2>
 
-        <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
-          <button onClick={addState} style={btnStyle('#1abc9c')}>Add State</button>
-          <button onClick={addSelfLoop} style={btnStyle('#9b59b6')}>Add Self-Loop</button>
-          <input
+        <div className="sim-toolbar">
+          <button onClick={addState} style={btnStyle('#1abc9c')} className="sim-btn">Add State</button>
+          <button onClick={addSelfLoop} style={btnStyle('#9b59b6')} className="sim-btn">Add Self-Loop</button>
+          <input className="sim-input"
             value={testString}
             onChange={e => setTestString(e.target.value)}
             placeholder="Test string (e.g. aaab)"
-            style={{ padding: '8px', borderRadius: '4px' }}
           />
-          <button onClick={testDFA} style={btnStyle('#3498db')}>Test</button>
+          <button onClick={testDFA} style={btnStyle('#3498db')} className="sim-btn">Test</button>
         </div>
         {testResult && <div style={{ marginTop: '10px', fontWeight: 'bold' }}>{testResult}</div>}
       </header>
-
-      <div style={{ flexGrow: 1 }} ref={ref}>
+      <div className="sim-flow" ref={ref}>
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -440,7 +438,7 @@ const modalOverlayStyle = {
   backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
 };
 const modalContentStyle = {
-  background: '#fff', padding: '20px', borderRadius: '8px', width: '300px', boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+  background: '#fff', padding: '20px', borderRadius: '8px', width: 'min(90vw, 380px)', maxHeight: '80vh', overflowY: 'auto', boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
 };
 
 export default function Simulator() {
