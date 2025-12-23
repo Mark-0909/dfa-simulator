@@ -330,6 +330,59 @@ function AutomataSimulator() {
     else setTestResult(`❌ Rejected: Ended in non-final state ${current} (Path: ${path.join('->')})`);
   };
 
+  const exportDFA = () => {
+    const data = {
+      nodes,
+      edges,
+      startState,
+      acceptingStates: Array.from(acceptingStates)
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'dfa-config.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const importDFA = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const json = JSON.parse(e.target.result);
+        if (!json.nodes || !json.edges) {
+          alert('Invalid DFA file format');
+          return;
+        }
+
+        // Re-attach handlers to nodes because JSON doesn't store functions
+        const restoredNodes = json.nodes.map(n => ({
+          ...n,
+          data: {
+            ...n.data,
+            onAngleChange: (a) => updateNodeAngle(n.id, a)
+          }
+        }));
+
+        setNodes(restoredNodes);
+        setEdges(json.edges);
+        setStartState(json.startState || '');
+        setAcceptingStates(new Set(json.acceptingStates || []));
+        setTestResult('DFA Imported Successfully');
+      } catch (err) {
+        console.error(err);
+        alert('Failed to parse DFA file');
+      }
+    };
+    reader.readAsText(file);
+    // Reset input so same file can be selected again if needed
+    event.target.value = '';
+  };
+
   return (
     <div className="sim-root">
       <header className="sim-header">
@@ -344,6 +397,19 @@ function AutomataSimulator() {
             placeholder="Test string (e.g. aaab)"
           />
           <button onClick={testDFA} style={btnStyle('#3498db')} className="sim-btn">Test</button>
+
+          <div style={{ width: '1px', height: '20px', background: '#ddd', margin: '0 10px' }}></div>
+
+          <button onClick={exportDFA} style={btnStyle('#e67e22')} className="sim-btn">Export</button>
+          <label style={{ ...btnStyle('#16a085'), cursor: 'pointer', display: 'inline-block', margin: 0 }}>
+            Import
+            <input
+              type="file"
+              accept=".json"
+              onChange={importDFA}
+              style={{ display: 'none' }}
+            />
+          </label>
         </div>
         {testResult && <div style={{ marginTop: '10px', fontWeight: 'bold' }}>{testResult}</div>}
       </header>
