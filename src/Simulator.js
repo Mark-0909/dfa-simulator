@@ -181,6 +181,9 @@ function AutomataSimulator() {
       id: `self-${selectedNodeForLoop}-${Date.now()}`,
       source: selectedNodeForLoop,
       target: selectedNodeForLoop,
+      // Ensure React Flow computes proper anchor coordinates for self-loops
+      sourceHandle: 'source-0',
+      targetHandle: 'target-0',
       label: loopLabel,
       type: 'selfLoop',
       markerEnd: { type: MarkerType.ArrowClosed },

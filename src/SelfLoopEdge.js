@@ -16,6 +16,8 @@ export default function SelfLoopEdge({
     selected,
     data,
 }) {
+    // Access React Flow API early so helpers are available for geometry
+    const { screenToFlowPosition, setEdges } = useReactFlow();
     // Get the source node data to find the current rotation angle
     const nodesData = useNodesData(source);
     // Base anchor angle from node (where the handle sits)
@@ -23,7 +25,8 @@ export default function SelfLoopEdge({
     const anchorAngleRad = (anchorAngleDeg * Math.PI) / 180;
 
     // Loop-specific angle (can be rotated independently of the node anchor)
-    const loopAngleDeg = data?.loopAngle !== undefined ? data.loopAngle : anchorAngleDeg;
+    // Keep self-loop orientation independent of node handle selection
+    const loopAngleDeg = data?.loopAngle !== undefined ? data.loopAngle : -90;
     const loopAngleRad = (loopAngleDeg * Math.PI) / 180;
     const anchorOffset = 0;
     const anchorShift = { x: 0, y: 0 }; // keep loop attached to node with no gap
@@ -31,13 +34,39 @@ export default function SelfLoopEdge({
     // Node geometry
     const radius = 38;
 
-    // Calculate CenterX/CenterY based on Handle Position
-    const centerX = sourceX - radius * Math.cos(anchorAngleRad);
-    const centerY = sourceY - radius * Math.sin(anchorAngleRad);
+    // Calculate CenterX/CenterY based on the cardinal handle so rotation follows the state
+    let centerX;
+    let centerY;
+    switch (sourcePosition) {
+        case 'Top':
+        case 'top':
+            centerX = sourceX;
+            centerY = sourceY + radius;
+            break;
+        case 'Right':
+        case 'right':
+            centerX = sourceX - radius;
+            centerY = sourceY;
+            break;
+        case 'Bottom':
+        case 'bottom':
+            centerX = sourceX;
+            centerY = sourceY - radius;
+            break;
+        case 'Left':
+        case 'left':
+            centerX = sourceX + radius;
+            centerY = sourceY;
+            break;
+        default:
+            centerX = sourceX - radius * Math.cos(anchorAngleRad);
+            centerY = sourceY - radius * Math.sin(anchorAngleRad);
+            break;
+    }
 
     // Offset loop anchor sideways to spread overlapping loops from same source and allow manual drag shift
-    const tangentX = Math.sin(anchorAngleRad);
-    const tangentY = -Math.cos(anchorAngleRad);
+    const tangentX = Math.sin(loopAngleRad);
+    const tangentY = -Math.cos(loopAngleRad);
     const anchorShiftX = tangentX * anchorOffset + anchorShift.x;
     const anchorShiftY = tangentY * anchorOffset + anchorShift.y;
 
@@ -89,7 +118,7 @@ export default function SelfLoopEdge({
     const labelX = (startX + c1.x + c2.x + endX) / 4;
     const labelY = (startY + c1.y + c2.y + endY) / 4;
 
-    const { screenToFlowPosition, setEdges } = useReactFlow();
+    
     const [dragging, setDragging] = useState(null); // 'c1' | 'c2' | 'angle' | null
     const [showHandles, setShowHandles] = useState(false);
 
