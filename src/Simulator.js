@@ -314,6 +314,16 @@ function AutomataSimulator() {
         setTestResult(`❌ Rejected at ${current} (Path: ${path.join('->')}): No transition for '${char}'`);
         return;
       }
+      // If this transition is a self-loop, trigger a lightweight animation pulse
+      if (edge.source === edge.target) {
+        console.log('Trigger self-loop pulse on edge', edge.id);
+        setEdges((eds) => eds.map((e) => {
+          if (e.id !== edge.id) return e;
+          const next = { ...(e || {}) };
+          next.data = { ...(e.data || {}), animatePulse: Date.now() };
+          return next;
+        }));
+      }
       current = edge.target;
       path.push(current);
     }

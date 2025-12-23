@@ -205,6 +205,22 @@ export default function SelfLoopEdge({
     return (
         <>
             <BaseEdge path={edgePath} markerEnd={markerEnd} style={style} />
+            {/* One-shot pulse animation along the loop when `data.animatePulse` changes.
+                Use CSS offset-path where supported for better browser behavior. */}
+            {data && data.animatePulse && (
+                <>
+                    {/* Keep a hidden path for reference or fallback */}
+                    <path id={`pulsePath-${id}`} d={edgePath} fill="none" stroke="none" />
+                    <g className="self-loop-pulse" style={{ pointerEvents: 'none' }}>
+                        <circle r={5} fill="#2ecc71" key={data.animatePulse}>
+                            <animateMotion dur="700ms" repeatCount="1" fill="freeze">
+                                <mpath href={`#pulsePath-${id}`} />
+                            </animateMotion>
+                            <animate attributeName="opacity" values="0;1;0" dur="700ms" repeatCount="1" />
+                        </circle>
+                    </g>
+                </>
+            )}
             {label && (
                 <EdgeLabelRenderer>
                     <div

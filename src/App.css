@@ -117,3 +117,15 @@
   .sim-btn { padding: 14px 18px; font-size: 15px; }
   .react-flow__edge-label { font-size: 13px; }
 }
+
+/* Pulse animation used by self-loop edges when traversed */
+@keyframes pulseMove {
+  to { offset-distance: 100%; }
+}
+@-webkit-keyframes pulseMove {
+  to { -webkit-offset-distance: 100%; }
+}
+
+.self-loop-pulse {
+  pointer-events: none;
+}
