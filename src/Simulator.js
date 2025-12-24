@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   ReactFlow,
   Background,
@@ -147,6 +147,10 @@ function AutomataSimulator() {
   const [connectLabel, setConnectLabel] = useState('');
   const [connectError, setConnectError] = useState('');
   const [selfLoopError, setSelfLoopError] = useState('');
+  // refs/controls for pulse sequencing
+  const pulseRunRef = useRef(0);
+  const pulseLoopCancelRef = useRef(false);
+  const PULSE_DEFAULT_DURATION = 700; // ms
 
   // Export Modal State
   const [showExportModal, setShowExportModal] = useState(false);
@@ -350,36 +354,65 @@ function AutomataSimulator() {
   };
 
   const testDFA = () => {
-    if (!startState) return setTestResult('⚠️ Set a start state first.');
-    let current = startState;
-    const input = testString.trim();
-    let path = [current];
-
-    for (let char of input) {
-      const loopCurrent = current;
-      const edge = edges.find(e =>
-        e.source === loopCurrent && e.label.split(',').map(s => s.trim()).includes(char)
-      );
-      if (!edge) {
-        setTestResult(`❌ Rejected at ${current} (Path: ${path.join('->')}): No transition for '${char}'`);
-        return;
-      }
-      // If this transition is a self-loop, trigger a lightweight animation pulse
-      if (edge.source === edge.target) {
-        console.log('Trigger self-loop pulse on edge', edge.id);
-        setEdges((eds) => eds.map((e) => {
-          if (e.id !== edge.id) return e;
-          const next = { ...(e || {}) };
-          next.data = { ...(e.data || {}), animatePulse: Date.now() };
-          return next;
-        }));
-      }
-      current = edge.target;
-      path.push(current);
+    if (!startState) {
+      setTestResult('⚠️ Set a start state first.');
+      return;
     }
 
-    if (acceptingStates.has(current)) setTestResult(`✅ Accepted! Ended in ${current} (Path: ${path.join('->')})`);
-    else setTestResult(`❌ Rejected: Ended in non-final state ${current} (Path: ${path.join('->')})`);
+    // start a new run and cancel any previous looping animation
+    pulseRunRef.current += 1;
+    const runId = pulseRunRef.current;
+    pulseLoopCancelRef.current = false;
+
+    const input = testString.trim();
+    let current = startState;
+    const path = [current];
+    const traversedEdges = [];
+
+    const triggerPulse = (edgeId, duration = PULSE_DEFAULT_DURATION) => new Promise((resolve) => {
+      setEdges((eds) => eds.map((e) => {
+        if (e.id !== edgeId) return e;
+        const next = { ...(e || {}) };
+        next.data = { ...(e.data || {}), animatePulse: Date.now(), animatePulseDuration: duration };
+        return next;
+      }));
+      setTimeout(resolve, duration + 10);
+    });
+
+    (async () => {
+      for (let char of input) {
+        const loopCurrent = current;
+        const edge = edges.find(e => e.source === loopCurrent && (e.label || '').split(',').map(s => s.trim()).includes(char));
+        if (!edge) {
+          setTestResult(`❌ Rejected at ${current} (Path: ${path.join('->')}): No transition for '${char}'`);
+          pulseLoopCancelRef.current = true;
+          return;
+        }
+
+        traversedEdges.push(edge.id);
+        await triggerPulse(edge.id, edge.data?.animatePulseDuration || PULSE_DEFAULT_DURATION);
+        if (pulseRunRef.current !== runId) return; // aborted by a new run
+
+        current = edge.target;
+        path.push(current);
+      }
+
+      if (acceptingStates.has(current)) {
+        setTestResult(`✅ Accepted! Ended in ${current} (Path: ${path.join('->')})`);
+
+        // loop pulses across traversed edges until canceled
+        (async function loopPulse() {
+          while (!pulseLoopCancelRef.current && pulseRunRef.current === runId) {
+            for (const eid of traversedEdges) {
+              await triggerPulse(eid, PULSE_DEFAULT_DURATION);
+              if (pulseLoopCancelRef.current || pulseRunRef.current !== runId) return;
+            }
+          }
+        })();
+      } else {
+        setTestResult(`❌ Rejected: Ended in non-final state ${current} (Path: ${path.join('->')})`);
+      }
+    })();
   };
 
   const handleExportClick = () => {
@@ -469,7 +502,7 @@ function AutomataSimulator() {
             />
           </label>
         </div>
-        {testResult && <div style={{ marginTop: '10px', fontWeight: 'bold' }}>{testResult}</div>}
+          {testResult && <div style={{ marginTop: '10px', fontWeight: 'bold' }}>{testResult}</div>}
       </header>
       <div className="sim-flow" ref={ref}>
         <ReactFlow

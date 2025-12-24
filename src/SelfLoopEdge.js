@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { BaseEdge, EdgeLabelRenderer, useNodesData, useReactFlow } from '@xyflow/react';
+import BezierPulse from './BezierPulse';
 
 export default function SelfLoopEdge({
     id,
@@ -16,6 +17,7 @@ export default function SelfLoopEdge({
     selected,
     data,
 }) {
+    // No local pulse state here; use `BezierPulse` component for animation
     // Access React Flow API early so helpers are available for geometry
     const { screenToFlowPosition, setEdges } = useReactFlow();
     // Get the source node data to find the current rotation angle
@@ -121,6 +123,7 @@ export default function SelfLoopEdge({
     
     const [dragging, setDragging] = useState(null); // 'c1' | 'c2' | 'angle' | null
     const [showHandles, setShowHandles] = useState(false);
+    // Animation is handled by the BezierPulse component; no local effects required.
 
     useEffect(() => {
         if (!dragging) return;
@@ -206,20 +209,15 @@ export default function SelfLoopEdge({
         <>
             <BaseEdge path={edgePath} markerEnd={markerEnd} style={style} />
             {/* One-shot pulse animation along the loop when `data.animatePulse` changes.
-                Use CSS offset-path where supported for better browser behavior. */}
+                Use inline SMIL `animateMotion` with a direct `path` attribute (matches LandingPage approach).
+            */}
             {data && data.animatePulse && (
-                <>
-                    {/* Keep a hidden path for reference or fallback */}
-                    <path id={`pulsePath-${id}`} d={edgePath} fill="none" stroke="none" />
-                    <g className="self-loop-pulse" style={{ pointerEvents: 'none' }}>
-                        <circle r={5} fill="#2ecc71" key={data.animatePulse}>
-                            <animateMotion dur="700ms" repeatCount="1" fill="freeze">
-                                <mpath href={`#pulsePath-${id}`} />
-                            </animateMotion>
-                            <animate attributeName="opacity" values="0;1;0" dur="700ms" repeatCount="1" />
-                        </circle>
-                    </g>
-                </>
+                <BezierPulse duration={data?.animatePulseDuration || 700} pathPoints={{
+                    p0: { x: startX, y: startY },
+                    c1: { x: c1.x, y: c1.y },
+                    c2: { x: c2.x, y: c2.y },
+                    p3: { x: endX, y: endY }
+                }} />
             )}
             {label && (
                 <EdgeLabelRenderer>

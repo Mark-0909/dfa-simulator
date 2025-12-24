@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { BaseEdge, EdgeLabelRenderer, useReactFlow } from '@xyflow/react';
+import BezierPulse from './BezierPulse';
 
 function cubicPoint(t, p0, c1, c2, p3) {
   const mt = 1 - t;
@@ -137,6 +138,14 @@ export default function AdjustableBezierEdge(props) {
   return (
     <>
       <BaseEdge path={path} markerEnd={markerEnd} style={style} />
+      {data && data.animatePulse && (
+        <BezierPulse key={data.animatePulse} duration={data?.animatePulseDuration || 700} pathPoints={{
+          p0: { x: sX, y: sY },
+          c1: renderC1,
+          c2: renderC2,
+          p3: { x: targetX, y: targetY }
+        }} />
+      )}
       {label && (
         <EdgeLabelRenderer>
           <div
