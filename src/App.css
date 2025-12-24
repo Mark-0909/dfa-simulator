@@ -97,6 +97,13 @@
   bottom: 12px;
   right: 12px;
   z-index: 30;
+  width: auto !important;
+  max-width: fit-content !important;
+}
+
+.react-flow__panel.react-flow__controls {
+  width: auto !important;
+  max-width: fit-content !important;
 }
 
 /* Edge labels slightly larger and rounded for readability */
