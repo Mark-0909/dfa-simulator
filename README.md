@@ -2,6 +2,8 @@
 
 An interactive web-based simulator for Deterministic Finite Automata (DFA). This project allows users to visualize, create, and test finite automata with an intuitive graphical interface.
 
+🔗 **Live Demo**: [https://dfa-simulator67.netlify.app/](https://dfa-simulator67.netlify.app/)
+
 ## Features
 
 - **Visual DFA Editor**: Create and edit DFA diagrams with an interactive node-and-edge interface
