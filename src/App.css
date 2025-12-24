@@ -129,3 +129,17 @@
 .self-loop-pulse {
   pointer-events: none;
 }
+
+/* Hide React Flow attribution panel only (keep controls visible) */
+.react-flow__attribution {
+  display: none !important;
+}
+
+.react-flow__panel.react-flow__attribution {
+  display: none !important;
+}
+
+/* Hide minimap if present */
+.react-flow__minimap {
+  display: none !important;
+}

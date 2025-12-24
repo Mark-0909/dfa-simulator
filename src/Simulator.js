@@ -39,9 +39,30 @@ const nodeTypes = {
 
 function AutomataSimulator() {
   const [nodes, setNodes] = useState([
-    { id: 'q0', type: 'circular', position: { x: 100, y: 150 }, data: { label: 'q0', angle: -90 }, style: nodeStyle },
-    { id: 'q1', type: 'circular', position: { x: 250, y: 150 }, data: { label: 'q1', angle: -90, isFinal: true }, style: finalStyle },
-    { id: 'q2', type: 'circular', position: { x: 400, y: 150 }, data: { label: 'q2', angle: -90, isFinal: true }, style: finalStyle },
+    { 
+      id: 'q0', 
+      type: 'circular', 
+      position: { x: 100, y: 150 }, 
+      data: { label: 'q0', angle: 6.220154399914559 }, 
+      style: nodeStyle,
+      measured: { width: 60, height: 60 }
+    },
+    { 
+      id: 'q1', 
+      type: 'circular', 
+      position: { x: 250, y: 150 }, 
+      data: { label: 'q1', angle: -90, isFinal: true }, 
+      style: finalStyle,
+      measured: { width: 60, height: 60 }
+    },
+    { 
+      id: 'q2', 
+      type: 'circular', 
+      position: { x: 400, y: 150 }, 
+      data: { label: 'q2', angle: -90, isFinal: true }, 
+      style: finalStyle,
+      measured: { width: 60, height: 60 }
+    },
   ]);
 
   // Attach angle change handler to initial nodes
@@ -57,8 +78,35 @@ function AutomataSimulator() {
 
 
   const baseEdges = [
-    { id: 'e1', source: 'q0', target: 'q1', label: 'a', style: { strokeWidth: 2, stroke: '#2c3e50' }, markerEnd: { type: MarkerType.ArrowClosed, color: '#2c3e50' }, type: 'adjustableBezier' },
-    { id: 'e2', source: 'q0', target: 'q2', label: 'b', style: { strokeWidth: 2, stroke: '#2c3e50' }, markerEnd: { type: MarkerType.ArrowClosed, color: '#2c3e50' }, type: 'adjustableBezier' }
+    {
+      source: 'q0',
+      sourceHandle: 'source-2',
+      target: 'q2',
+      targetHandle: 'target-2',
+      id: 'e-q0-q2-1766538228471',
+      label: 'b',
+      markerEnd: { type: MarkerType.ArrowClosed, color: '#2c3e50' },
+      style: { strokeWidth: 2, stroke: '#2c3e50' },
+      type: 'adjustableBezier',
+      data: {
+        anchorOffset: -5
+      }
+    },
+    {
+      id: 'e1',
+      source: 'q0',
+      target: 'q1',
+      label: 'a',
+      style: { strokeWidth: 2, stroke: '#2c3e50' },
+      markerEnd: { type: MarkerType.ArrowClosed, color: '#2c3e50' },
+      type: 'adjustableBezier',
+      data: {
+        anchorOffset: 5,
+        c1: { x: 193.10714721679688, y: 95.82143783569336 },
+        c2: { x: 255.10714721679688, y: 120.96429061889648 }
+      },
+      selected: false
+    }
   ];
 
   const applyEdgeOffsets = useCallback((eds) => {
