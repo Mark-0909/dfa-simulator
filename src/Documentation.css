@@ -1,0 +1,223 @@
+/* Base wrapper */
+.docs-wrapper {
+  min-height: 100vh;
+  background: #050505;
+  color: #ffffff;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue",
+    sans-serif;
+}
+
+/* Main layout */
+.docs-content {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 2rem;
+  padding: 140px 2rem 2rem 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Sidebar */
+.docs-sidebar {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 1.2rem;
+  height: fit-content;
+  position: sticky;
+  top: 120px;
+}
+
+.docs-sidebar h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 0.8rem;
+  color: #667eea;
+}
+
+.docs-sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.docs-sidebar li {
+  margin-bottom: 0.6rem;
+}
+
+.docs-sidebar a {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+  text-decoration: none;
+  display: block;
+  padding: 0.5rem;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.docs-sidebar a:hover {
+  color: #667eea;
+  background: rgba(102, 126, 234, 0.1);
+}
+
+/* Main content */
+.docs-main {
+  background: transparent;
+  border-radius: 12px;
+  padding: 0;
+  border: none;
+}
+
+/* Sections */
+.doc-section {
+  margin-bottom: 3rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 2rem;
+  backdrop-filter: blur(10px);
+}
+
+.doc-section h2 {
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+  padding-bottom: 0.4rem;
+  color: #667eea;
+}
+
+.doc-section h3 {
+  margin-top: 1.5rem;
+  font-size: 1.3rem;
+  color: #8b9dc3;
+}
+
+.doc-section h4 {
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+  color: #a0aec0;
+}
+
+.doc-section p {
+  line-height: 1.8;
+  margin: 0.6rem 0;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.doc-section ul,
+.doc-section ol {
+  padding-left: 1.5rem;
+  margin-top: 0.6rem;
+}
+
+.doc-section li {
+  margin-bottom: 0.4rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.doc-section ul li {
+  list-style: none;
+  padding-left: 1.5rem;
+  position: relative;
+}
+
+.doc-section ul li::before {
+  content: "▹";
+  position: absolute;
+  left: 0;
+  color: #667eea;
+  font-weight: bold;
+}
+
+.doc-section a {
+  color: #667eea;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.3s ease;
+}
+
+.doc-section a:hover {
+  border-bottom-color: #667eea;
+}
+
+/* Feature grid */
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.2rem;
+  margin-top: 1.5rem;
+}
+
+.feature-card {
+  background: rgba(102, 126, 234, 0.05);
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  border-radius: 10px;
+  padding: 1.2rem;
+  transition: all 0.3s ease;
+}
+
+.feature-card:hover {
+  background: rgba(102, 126, 234, 0.1);
+  transform: translateY(-5px);
+}
+
+.feature-card h4 {
+  margin-bottom: 0.4rem;
+  font-size: 1rem;
+  color: #667eea;
+}
+
+.feature-card p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Tips */
+.tip-box {
+  background: rgba(255, 193, 7, 0.05);
+  border-left: 4px solid #ffc107;
+  padding: 1rem 1.2rem;
+  border-radius: 6px;
+  margin-top: 1rem;
+}
+
+.tip-box h4 {
+  margin-bottom: 0.3rem;
+  color: #ffc107;
+}
+
+.tip-box p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Primary button */
+.primary-btn {
+  margin-top: 1rem;
+  padding: 0.7rem 1.4rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+}
+
+.primary-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .docs-content {
+    grid-template-columns: 1fr;
+  }
+
+  .docs-sidebar {
+    position: relative;
+    top: 0;
+  }
+}

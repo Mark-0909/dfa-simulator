@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import './LandingPage.css';
 
 const LandingPage = () => {
@@ -46,9 +46,9 @@ const LandingPage = () => {
                     <div className="status-pill">SYSTEM_KERNEL: ONLINE</div>
                 </div>
                 <div className="nav-links-header">
-                    <a href="#about">About</a>
-                    <a href="#docs">Documentation</a>
-                    <a href="https://github.com/your-username/dfa-simulator" target="_blank" rel="noopener noreferrer">GitHub</a>
+                    <Link to="/about">About</Link>
+                    <Link to="/documentation">Documentation</Link>
+                    <a href="https://github.com/Mark-0909/dfa-simulator" target="_blank" rel="noopener noreferrer">GitHub</a>
                 </div>
                 <button
                     className="mobile-menu-btn"
@@ -61,9 +61,9 @@ const LandingPage = () => {
 
             {menuOpen && (
                 <nav className="mobile-menu reveal-up" onClick={() => setMenuOpen(false)}>
-                    <a href="#about">About</a>
-                    <a href="#docs">Documentation</a>
-                    <a href="https://github.com/your-username/dfa-simulator" target="_blank" rel="noopener noreferrer">GitHub</a>
+                    <Link to="/about">About</Link>
+                    <Link to="/documentation">Documentation</Link>
+                    <a href="https://github.com/Mark-0909/dfa-simulator" target="_blank" rel="noopener noreferrer">GitHub</a>
                 </nav>
             )}
 
