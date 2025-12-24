@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 
 // Reusable JS-driven pulse along a cubic bezier defined by points {p0,c1,c2,p3}
 // Uses easing and a small trailing dot for visual polish while remaining performant.
-export default function BezierPulse({ pathPoints, duration = 700 }) {
+export default function BezierPulse({ pathPoints, duration = 700, showTrail = false, trailOffset = 0.08, trailOpacity = 0.25, trailScale = 0.6 }) {
   const [pos, setPos] = useState(null);
   const [trailPos, setTrailPos] = useState(null);
   const [progress, setProgress] = useState(0);
@@ -32,7 +32,7 @@ export default function BezierPulse({ pathPoints, duration = 700 }) {
       const rawT = Math.min(1, (now - start) / duration);
       const t = easeInOutCubic(rawT);
       const pt = cubicPoint(t, pathPoints.p0, pathPoints.c1, pathPoints.c2, pathPoints.p3);
-      const trailT = Math.max(0, Math.min(1, t - 0.08));
+      const trailT = Math.max(0, Math.min(1, t - trailOffset));
       const trailPt = cubicPoint(trailT, pathPoints.p0, pathPoints.c1, pathPoints.c2, pathPoints.p3);
 
       setPos(pt);
@@ -45,7 +45,7 @@ export default function BezierPulse({ pathPoints, duration = 700 }) {
 
     raf = requestAnimationFrame(step);
     return () => { if (raf) cancelAnimationFrame(raf); setPos(null); setTrailPos(null); setProgress(0); };
-  }, [pathPoints, duration]);
+  }, [pathPoints, duration, trailOffset]);
 
   if (!pos) return null;
   const baseR = 5;
@@ -55,7 +55,9 @@ export default function BezierPulse({ pathPoints, duration = 700 }) {
 
   return (
     <g style={{ pointerEvents: 'none' }}>
-      {trailPos && <circle cx={trailPos.x} cy={trailPos.y} r={Math.max(2, baseR * 0.7)} fill="#2ecc71" opacity={0.35} />}
+      {showTrail && trailPos && (
+        <circle cx={trailPos.x} cy={trailPos.y} r={Math.max(2, baseR * trailScale)} fill="#2ecc71" opacity={trailOpacity} />
+      )}
       <circle cx={pos.x} cy={pos.y} r={r} fill="#2ecc71" stroke="#fff" strokeWidth={1} opacity={opacity} />
     </g>
   );

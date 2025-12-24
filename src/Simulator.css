@@ -1,0 +1,56 @@
+:root {
+  --sim-border-radius: 10px;
+}
+
+.sim-result-card {
+  margin-top: 10px;
+  padding: 12px 14px;
+  border-radius: var(--sim-border-radius);
+  background: #edf2f6;
+  border: 2px solid var(--result-color);
+}
+
+.sim-result-card.sim-accepted { --result-color: #2ecc71; }
+.sim-result-card.sim-rejected { --result-color: #e74c3c; }
+.sim-result-card.sim-warning  { --result-color: #f39c12; }
+
+.sim-result-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--result-color);
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.sim-result-status .icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.sim-result-path {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sim-state-chip {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid #dfe4ea;
+  font-size: 12px;
+  color: #34495e;
+}
+
+.sim-path-sep {
+  color: #95a5a6;
+  align-self: center;
+}
+
+.sim-result-detail {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #7f8c8d;
+}

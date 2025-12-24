@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { BaseEdge, EdgeLabelRenderer, useNodesData, useReactFlow } from '@xyflow/react';
 import BezierPulse from './BezierPulse';
 

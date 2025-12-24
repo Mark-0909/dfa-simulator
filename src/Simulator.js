@@ -10,6 +10,7 @@ import {
   addEdge
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import './Simulator.css';
 import SelfLoopEdge from './SelfLoopEdge';
 import AdjustableBezierEdge from './AdjustableBezierEdge';
 import CircularNode from './CircularNode';
@@ -437,6 +438,19 @@ function AutomataSimulator() {
     setShowExportModal(false);
   };
 
+  // Parse and format test result string into structured data for clearer rendering
+  const parseTestResult = (s) => {
+    if (!s) return null;
+    const status = s.startsWith('✅') ? 'accepted' : s.startsWith('❌') ? 'rejected' : 'warning';
+    const pathMatch = s.match(/\(Path:\s([^)]+)\)/);
+    const path = pathMatch ? pathMatch[1].split('->').map((t) => t.trim()) : [];
+    const currentMatch = s.match(/Ended in\s(\w+)|Rejected at\s(\w+)/);
+    const current = currentMatch ? (currentMatch[1] || currentMatch[2]) : '';
+    const charMatch = s.match(/No transition for '(.+?)'/);
+    const missingChar = charMatch ? charMatch[1] : null;
+    return { status, path, current, missingChar, text: s };
+  };
+
   const importDFA = (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -502,7 +516,34 @@ function AutomataSimulator() {
             />
           </label>
         </div>
-          {testResult && <div style={{ marginTop: '10px', fontWeight: 'bold' }}>{testResult}</div>}
+          {testResult && (() => {
+            const info = parseTestResult(testResult);
+            const icon = info?.status === 'accepted' ? '✅' : info?.status === 'rejected' ? '❌' : '⚠️';
+            const plainText = info.text.replace(/^(✅|❌|⚠️)\s*/, '');
+            return (
+              <div role="status" aria-live="polite" className={`sim-result-card sim-${info.status}`}>
+                <div className="sim-result-status">
+                  <span className="icon">{icon}</span>
+                  <span>{plainText}</span>
+                </div>
+                {info.path.length > 0 && (
+                  <div className="sim-result-path">
+                    {info.path.map((p, i) => (
+                      <React.Fragment key={`${p}-${i}`}>
+                        <span className="sim-state-chip">{p}</span>
+                        {i < info.path.length - 1 && <span className="sim-path-sep">→</span>}
+                      </React.Fragment>
+                    ))}
+                  </div>
+                )}
+                {info.missingChar && (
+                  <div className="sim-result-detail">
+                    Missing transition for '{info.missingChar}' from {info.current || info.path[info.path.length - 1] || 'current state'}.
+                  </div>
+                )}
+              </div>
+            );
+          })()}
       </header>
       <div className="sim-flow" ref={ref}>
         <ReactFlow
