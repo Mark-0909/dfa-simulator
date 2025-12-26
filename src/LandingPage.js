@@ -69,7 +69,7 @@ const LandingPage = () => {
 
             <main className="hero-container">
                 <div className="hero-content">
-                    <h2 className="hero-title reveal-up delay-1">VISUALIZE.<br />COMPUTE.<br />DETERMINE.</h2>
+                    <h2 className="hero-title reveal-up delay-1">DESIGN.<br />SIMULATE.<br />VALIDATE.</h2>
                     <p className="hero-sub reveal-up delay-2">
                         Build and test Deterministic Finite Automata in a clean, professional environment.
                     </p>
