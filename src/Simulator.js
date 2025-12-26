@@ -10,7 +10,7 @@ import {
   addEdge
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import './Simulator.css';
+import './Simulator.css'; // Import the new styles
 import SelfLoopEdge from './SelfLoopEdge';
 import AdjustableBezierEdge from './AdjustableBezierEdge';
 import CircularNode from './CircularNode';
@@ -20,12 +20,19 @@ import ContextMenu from './ContextMenu';
 const nodeStyle = {
   borderRadius: '50%', width: 60, height: 60,
   display: 'flex', alignItems: 'center', justifyContent: 'center',
-  // Make node fill semi-transparent so edges remain visible underneath
-  backgroundColor: 'rgba(255,255,255,0.6)', border: '2px solid #2c3e50',
-  fontWeight: 'bold', fontSize: '14px'
+  // Dark theme styles
+  backgroundColor: 'rgba(5, 5, 5, 0.95)',
+  border: '2px solid #4a9eff', // Accent Blue
+  color: 'white',
+  fontWeight: 'bold', fontSize: '14px',
+  fontFamily: '"Space Mono", monospace' // Added font
 };
 
-const finalStyle = { ...nodeStyle, border: '5px double #2c3e50' };
+const finalStyle = {
+  ...nodeStyle,
+  border: '5px double #00ff88', // Accent Green for final stats
+  boxShadow: '0 0 10px rgba(0, 255, 136, 0.3)' // Subtle glow
+};
 
 const edgeTypes = {
   selfLoop: SelfLoopEdge,
@@ -40,27 +47,27 @@ const nodeTypes = {
 
 function AutomataSimulator() {
   const [nodes, setNodes] = useState([
-    { 
-      id: 'q0', 
-      type: 'circular', 
-      position: { x: 100, y: 150 }, 
-      data: { label: 'q0', angle: 6.220154399914559 }, 
+    {
+      id: 'q0',
+      type: 'circular',
+      position: { x: 100, y: 150 },
+      data: { label: 'q0', angle: 6.220154399914559 },
       style: nodeStyle,
       measured: { width: 60, height: 60 }
     },
-    { 
-      id: 'q1', 
-      type: 'circular', 
-      position: { x: 250, y: 150 }, 
-      data: { label: 'q1', angle: -90, isFinal: true }, 
+    {
+      id: 'q1',
+      type: 'circular',
+      position: { x: 250, y: 150 },
+      data: { label: 'q1', angle: -90, isFinal: true },
       style: finalStyle,
       measured: { width: 60, height: 60 }
     },
-    { 
-      id: 'q2', 
-      type: 'circular', 
-      position: { x: 400, y: 150 }, 
-      data: { label: 'q2', angle: -90, isFinal: true }, 
+    {
+      id: 'q2',
+      type: 'circular',
+      position: { x: 400, y: 150 },
+      data: { label: 'q2', angle: -90, isFinal: true },
       style: finalStyle,
       measured: { width: 60, height: 60 }
     },
@@ -86,8 +93,8 @@ function AutomataSimulator() {
       targetHandle: 'target-2',
       id: 'e-q0-q2-1766538228471',
       label: 'b',
-      markerEnd: { type: MarkerType.ArrowClosed, color: '#2c3e50' },
-      style: { strokeWidth: 2, stroke: '#2c3e50' },
+      markerEnd: { type: MarkerType.ArrowClosed, color: '#fff' },
+      style: { strokeWidth: 2, stroke: 'rgba(255, 255, 255, 0.8)' },
       type: 'adjustableBezier',
       data: {
         anchorOffset: -5
@@ -494,19 +501,19 @@ function AutomataSimulator() {
         <h2 style={{ margin: 0 }}>DFA Framework Simulator</h2>
 
         <div className="sim-toolbar">
-          <button onClick={addState} style={btnStyle('#1abc9c')} className="sim-btn">Add State</button>
-          <button onClick={addSelfLoop} style={btnStyle('#9b59b6')} className="sim-btn">Add Self-Loop</button>
+          <button onClick={addState} className="sim-btn">Add State</button>
+          <button onClick={addSelfLoop} className="sim-btn">Add Self-Loop</button>
           <input className="sim-input"
             value={testString}
             onChange={e => setTestString(e.target.value)}
             placeholder="Test string (e.g. aaab)"
           />
-          <button onClick={testDFA} style={btnStyle('#3498db')} className="sim-btn">Test</button>
+          <button onClick={testDFA} className="sim-btn">Test</button>
 
-          <div style={{ width: '1px', height: '20px', background: '#ddd', margin: '0 10px' }}></div>
+          <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.2)', margin: '0 10px' }}></div>
 
-          <button onClick={handleExportClick} style={btnStyle('#e67e22')} className="sim-btn">Export</button>
-          <label style={{ ...btnStyle('#16a085'), cursor: 'pointer', display: 'inline-block', margin: 0 }}>
+          <button onClick={handleExportClick} className="sim-btn">Export</button>
+          <label className="sim-btn" style={{ cursor: 'pointer', display: 'inline-block', margin: 0 }}>
             Import
             <input
               type="file"
@@ -516,34 +523,34 @@ function AutomataSimulator() {
             />
           </label>
         </div>
-          {testResult && (() => {
-            const info = parseTestResult(testResult);
-            const icon = info?.status === 'accepted' ? '✅' : info?.status === 'rejected' ? '❌' : '⚠️';
-            const plainText = info.text.replace(/^(✅|❌|⚠️)\s*/, '');
-            return (
-              <div role="status" aria-live="polite" className={`sim-result-card sim-${info.status}`}>
-                <div className="sim-result-status">
-                  <span className="icon">{icon}</span>
-                  <span>{plainText}</span>
-                </div>
-                {info.path.length > 0 && (
-                  <div className="sim-result-path">
-                    {info.path.map((p, i) => (
-                      <React.Fragment key={`${p}-${i}`}>
-                        <span className="sim-state-chip">{p}</span>
-                        {i < info.path.length - 1 && <span className="sim-path-sep">→</span>}
-                      </React.Fragment>
-                    ))}
-                  </div>
-                )}
-                {info.missingChar && (
-                  <div className="sim-result-detail">
-                    Missing transition for '{info.missingChar}' from {info.current || info.path[info.path.length - 1] || 'current state'}.
-                  </div>
-                )}
+        {testResult && (() => {
+          const info = parseTestResult(testResult);
+          const icon = info?.status === 'accepted' ? '✅' : info?.status === 'rejected' ? '❌' : '⚠️';
+          const plainText = info.text.replace(/^(✅|❌|⚠️)\s*/, '');
+          return (
+            <div role="status" aria-live="polite" className={`sim-result-card sim-${info.status}`}>
+              <div className="sim-result-status">
+                <span className="icon">{icon}</span>
+                <span>{plainText}</span>
               </div>
-            );
-          })()}
+              {info.path.length > 0 && (
+                <div className="sim-result-path">
+                  {info.path.map((p, i) => (
+                    <React.Fragment key={`${p}-${i}`}>
+                      <span className="sim-state-chip">{p}</span>
+                      {i < info.path.length - 1 && <span className="sim-path-sep">→</span>}
+                    </React.Fragment>
+                  ))}
+                </div>
+              )}
+              {info.missingChar && (
+                <div className="sim-result-detail">
+                  Missing transition for '{info.missingChar}' from {info.current || info.path[info.path.length - 1] || 'current state'}.
+                </div>
+              )}
+            </div>
+          );
+        })()}
       </header>
       <div className="sim-flow" ref={ref}>
         <ReactFlow
@@ -562,8 +569,9 @@ function AutomataSimulator() {
           onEdgeContextMenu={onEdgeContextMenu}
           onPaneClick={onPaneClick}
           fitView
+          colorMode="dark"
         >
-          <Background variant="dots" />
+          <Background variant="dots" gap={20} size={1} color="rgba(255, 255, 255, 0.2)" />
           <Controls />
           {menu && <ContextMenu onClick={handleMenuClick} {...menu} />}
         </ReactFlow>
@@ -598,8 +606,8 @@ function AutomataSimulator() {
               {selfLoopError && <div style={{ color: 'red', marginTop: '6px' }}>{selfLoopError}</div>}
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-              <button onClick={() => { setShowSelfLoopModal(false); setSelfLoopError(''); }} style={btnStyle('#95a5a6')}>Cancel</button>
-              <button onClick={handleSaveSelfLoop} style={btnStyle('#2ecc71')}>Save</button>
+              <button onClick={() => { setShowSelfLoopModal(false); setSelfLoopError(''); }} className="sim-btn" style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)' }}>Cancel</button>
+              <button onClick={handleSaveSelfLoop} className="sim-btn">Save</button>
             </div>
           </div>
         </div>
@@ -627,8 +635,8 @@ function AutomataSimulator() {
               {connectError && <div style={{ color: 'red', marginTop: '6px' }}>{connectError}</div>}
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-              <button onClick={() => { setShowConnectModal(false); setPendingConnect(null); setConnectError(''); }} style={btnStyle('#95a5a6')}>Cancel</button>
-              <button onClick={handleSaveConnection} style={btnStyle('#2ecc71')}>Save</button>
+              <button onClick={() => { setShowConnectModal(false); setPendingConnect(null); setConnectError(''); }} className="sim-btn" style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)' }}>Cancel</button>
+              <button onClick={handleSaveConnection} className="sim-btn">Save</button>
             </div>
           </div>
         </div>
@@ -653,8 +661,8 @@ function AutomataSimulator() {
               </div>
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-              <button onClick={() => setShowExportModal(false)} style={btnStyle('#95a5a6')}>Cancel</button>
-              <button onClick={confirmExport} style={btnStyle('#e67e22')}>Download</button>
+              <button onClick={() => setShowExportModal(false)} className="sim-btn" style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)' }}>Cancel</button>
+              <button onClick={confirmExport} className="sim-btn">Download</button>
             </div>
           </div>
         </div>
@@ -663,14 +671,13 @@ function AutomataSimulator() {
   );
 }
 
-const btnStyle = (bg) => ({ background: bg, color: '#fff', border: 'none', padding: '8px 15px', borderRadius: '4px', cursor: 'pointer' });
-const inputStyle = { width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box' };
+const inputStyle = { width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', boxSizing: 'border-box', background: 'rgba(255,255,255,0.05)', color: 'white' };
 const modalOverlayStyle = {
   position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-  backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+  backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(5px)'
 };
 const modalContentStyle = {
-  background: '#fff', padding: '20px', borderRadius: '8px', width: 'min(90vw, 380px)', maxHeight: '80vh', overflowY: 'auto', boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+  background: 'rgba(20, 20, 20, 0.95)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '24px', borderRadius: '12px', width: 'min(90vw, 380px)', maxHeight: '80vh', overflowY: 'auto', boxShadow: '0 4px 20px rgba(0,0,0,0.5)'
 };
 
 export default function Simulator() {

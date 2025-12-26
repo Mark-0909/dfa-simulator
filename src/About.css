@@ -3,6 +3,7 @@
     background: #050505;
     color: #ffffff;
     padding: 0;
+    font-family: 'Inter', sans-serif;
 }
 
 .page-content {
@@ -62,7 +63,8 @@
     flex-wrap: wrap;
 }
 
-.primary-btn, .secondary-btn {
+.primary-btn,
+.secondary-btn {
     padding: 1rem 2rem;
     border-radius: 8px;
     font-size: 1rem;
@@ -126,7 +128,8 @@
         flex-direction: column;
     }
 
-    .primary-btn, .secondary-btn {
+    .primary-btn,
+    .secondary-btn {
         width: 100%;
     }
 }

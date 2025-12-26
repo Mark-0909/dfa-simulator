@@ -1,35 +1,261 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;800&family=Space+Mono:wght@400;700&display=swap');
+
 :root {
+  /* --- Design Tokens from Landing Page --- */
+  --bg-black: #050505;
+  --accent-blue: #4a9eff;
+  --accent-cyan: #00fff2;
+  --accent-green: #00ff88;
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --btn-base: rgba(74, 158, 255, 0.25);
+  --text-main: #f0f2f5;
+
   --sim-border-radius: 10px;
+  --panel-bg: rgba(5, 5, 5, 0.95);
+  /* High opacity dark background */
 }
 
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg-black);
+  color: var(--text-main);
+  /* overflow: hidden; Removed to allow scrolling on other pages */
+}
+
+/* ---------- Simulator Layout ---------- */
+.sim-root {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-black);
+  background-image:
+    radial-gradient(circle at 50% 0%, rgba(74, 158, 255, 0.15) 0%, transparent 50%),
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 100% 100%, 40px 40px, 40px 40px;
+  overflow: hidden;
+  /* Ensure simulator stays fixed */
+}
+
+.sim-header {
+  padding: 16px 32px;
+  background: rgba(10, 10, 10, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+.sim-header h2 {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 1.1rem;
+  letter-spacing: 0.05em;
+  color: #fff;
+  text-shadow: 0 0 20px rgba(74, 158, 255, 0.5);
+}
+
+.sim-toolbar {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex: 1;
+}
+
+/* --- Sleek Buttons --- */
+.sim-btn {
+  position: relative;
+  padding: 10px 20px;
+  border-radius: 99px;
+  /* Pill shape */
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
+  color: rgba(255, 255, 255, 0.9);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(4px);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  overflow: hidden;
+}
+
+.sim-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  opacity: 0;
+  z-index: -1;
+  transition: opacity 0.3s ease;
+}
+
+.sim-btn:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+  color: #fff;
+  box-shadow: 0 0 20px rgba(74, 158, 255, 0.2);
+}
+
+.sim-btn:hover::before {
+  opacity: 0.15;
+}
+
+.sim-btn:active {
+  transform: scale(0.98);
+  box-shadow: none;
+}
+
+/* Custom colors for specific buttons (overriding base if needed, or keeping unified) */
+/* We can keep a unified blue theme or map specific colors to the glow manually */
+
+.sim-input {
+  padding: 10px 0;
+  border: none;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0;
+  background: transparent;
+  color: #fff;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.95rem;
+  flex: 1;
+  min-width: 200px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sim-input:focus {
+  outline: none;
+  border-color: var(--accent-cyan);
+  background: linear-gradient(to bottom, transparent 95%, rgba(0, 255, 242, 0.1) 100%);
+  text-shadow: 0 0 8px rgba(0, 255, 242, 0.5);
+}
+
+.sim-flow {
+  flex: 1;
+  position: relative;
+}
+
+/* Place React Flow controls */
+.sim-flow .react-flow {
+  background: transparent !important;
+  /* Ensure it is transparent to show sim-root bg */
+}
+
+/* If the library enforces a white background on the pane, override it */
+.sim-flow .react-flow__pane {
+  background: transparent !important;
+}
+
+.sim-flow .react-flow__controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 4px;
+  background: var(--panel-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+}
+
+.sim-flow .react-flow__controls-button {
+  background: transparent;
+  border-bottom: 1px solid var(--glass-border);
+  border-radius: 0;
+  width: 32px;
+  height: 32px;
+}
+
+.sim-flow .react-flow__controls-button:last-child {
+  border-bottom: none;
+}
+
+.sim-flow .react-flow__controls-button svg {
+  fill: white;
+}
+
+.sim-flow .react-flow__controls-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Edge labels */
+.react-flow__edge-label {
+  font-size: 12px;
+  font-family: 'Space Mono', monospace;
+  background: var(--bg-black);
+  border: 1px solid var(--accent-blue);
+  color: var(--accent-blue);
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+/* --- Result Card --- */
 .sim-result-card {
   margin-top: 10px;
-  padding: 12px 14px;
+  padding: 16px;
   border-radius: var(--sim-border-radius);
-  background: #edf2f6;
-  border: 2px solid var(--result-color);
+  background: rgba(10, 10, 10, 0.8);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(8px);
+  animation: slideDown 0.4s ease-out;
 }
 
-.sim-result-card.sim-accepted { --result-color: #2ecc71; }
-.sim-result-card.sim-rejected { --result-color: #e74c3c; }
-.sim-result-card.sim-warning  { --result-color: #f39c12; }
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sim-result-card.sim-accepted {
+  --result-color: var(--accent-green);
+  border-color: var(--accent-green);
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.1);
+}
+
+.sim-result-card.sim-rejected {
+  --result-color: #ff4a4a;
+  border-color: #ff4a4a;
+  box-shadow: 0 0 20px rgba(255, 74, 74, 0.1);
+}
+
+.sim-result-card.sim-warning {
+  --result-color: #fca510;
+  border-color: #fca510;
+}
 
 .sim-result-status {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   color: var(--result-color);
   font-weight: 700;
-  font-size: 16px;
-}
-
-.sim-result-status .icon {
-  font-size: 18px;
-  line-height: 1;
+  font-size: 1rem;
+  letter-spacing: 0.02em;
 }
 
 .sim-result-path {
-  margin-top: 8px;
+  margin-top: 12px;
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
@@ -37,20 +263,58 @@
 
 .sim-state-chip {
   padding: 4px 10px;
-  border-radius: 999px;
-  background: #fff;
-  border: 1px solid #dfe4ea;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
   font-size: 12px;
-  color: #34495e;
+  font-family: 'Space Mono', monospace;
+  color: #ccc;
+}
+
+.sim-state-chip:hover {
+  border-color: var(--accent-blue);
+  color: white;
 }
 
 .sim-path-sep {
-  color: #95a5a6;
-  align-self: center;
+  color: #555;
+  font-size: 0.8rem;
 }
 
 .sim-result-detail {
-  margin-top: 6px;
-  font-size: 12px;
-  color: #7f8c8d;
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: #888;
+  font-family: 'Space Mono', monospace;
+}
+
+/* --- Pulse Animation --- */
+@keyframes pulseMove {
+  to {
+    offset-distance: 100%;
+  }
+}
+
+.self-loop-pulse {
+  pointer-events: none;
+}
+
+/* --- Responsive --- */
+@media (max-width: 768px) {
+  .sim-header {
+    padding: 12px;
+  }
+
+  .sim-toolbar {
+    gap: 8px;
+  }
+
+  .sim-btn {
+    padding: 8px 12px;
+    font-size: 0.75rem;
+  }
+
+  .sim-input {
+    font-size: 0.85rem;
+  }
 }
