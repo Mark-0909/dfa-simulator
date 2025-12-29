@@ -6,9 +6,12 @@ import About from './About';
 import Documentation from './Documentation';
 import './App.css';
 
+import ScrollToTop from './ScrollToTop';
+
 export default function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/simulator" element={<Simulator />} />
