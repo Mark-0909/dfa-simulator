@@ -151,7 +151,8 @@ function AutomataSimulator() {
   // refs/controls for pulse sequencing
   const pulseRunRef = useRef(0);
   const pulseLoopCancelRef = useRef(false);
-  const PULSE_DEFAULT_DURATION = 700; // ms
+  const PULSE_DEFAULT_DURATION = 500; // ms for edge animations
+  const START_ARROW_DURATION = 500; // ms for start arrow animation
 
   // Export Modal State
   const [showExportModal, setShowExportModal] = useState(false);
@@ -380,7 +381,26 @@ function AutomataSimulator() {
       setTimeout(resolve, duration + 10);
     });
 
+    // Trigger entry pulse from start arrow to initial state (only if startState is q0)
+    const triggerEntryPulse = () => new Promise((resolve) => {
+      if (startState === 'q0') {
+        setNodes((nds) => nds.map((n) => {
+          if (n.id === 'q0') {
+            return {
+              ...n,
+              data: { ...n.data, startPulse: Date.now(), startPulseDuration: START_ARROW_DURATION }
+            };
+          }
+          return n;
+        }));
+      }
+      setTimeout(resolve, START_ARROW_DURATION + 10);
+    });
+
     (async () => {
+      // Animate entry from start arrow first
+      await triggerEntryPulse();
+      if (pulseRunRef.current !== runId) return;
       for (let char of input) {
         const loopCurrent = current;
         const edge = edges.find(e => e.source === loopCurrent && (e.label || '').split(',').map(s => s.trim()).includes(char));
@@ -403,8 +423,9 @@ function AutomataSimulator() {
 
         // loop pulses across traversed edges until canceled
         (async function loopPulse() {
-          while (!pulseLoopCancelRef.current && pulseRunRef.current === runId) {
-            for (const eid of traversedEdges) {
+          while (!pulseLoopCancelRef.current && pulseRunRef.current === runId) {            // Start each loop from the start arrow
+            await triggerEntryPulse();
+            if (pulseLoopCancelRef.current || pulseRunRef.current !== runId) return;            for (const eid of traversedEdges) {
               await triggerPulse(eid, PULSE_DEFAULT_DURATION);
               if (pulseLoopCancelRef.current || pulseRunRef.current !== runId) return;
             }

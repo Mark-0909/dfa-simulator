@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Handle, Position, useUpdateNodeInternals } from '@xyflow/react';
 
 const nodeStyle = {
@@ -18,6 +18,7 @@ const baseAngles = [-90, 0, 90, 180]; // degrees
 
 export default function CircularNode({ data, id, selected }) {
     const updateNodeInternals = useUpdateNodeInternals();
+    const [animationFrame, setAnimationFrame] = useState(0);
 
     // Support multiple handles around the circle
     // number of handles intentionally implicit (derived from angles array)
@@ -32,11 +33,37 @@ export default function CircularNode({ data, id, selected }) {
         }
     }, [angles, id, updateNodeInternals]);
 
+    // Animation loop for start pulse
+    useEffect(() => {
+        const startPulseActive = data.startPulse && Date.now() - data.startPulse < (data.startPulseDuration || 700);
+        if (!startPulseActive) return;
+
+        let raf = null;
+        const step = () => {
+            setAnimationFrame(prev => prev + 1);
+            raf = requestAnimationFrame(step);
+        };
+        raf = requestAnimationFrame(step);
+
+        return () => {
+            if (raf) cancelAnimationFrame(raf);
+        };
+    }, [data.startPulse, data.startPulseDuration]);
+
     const isFinal = data.isFinal;
     const style = isFinal ? finalStyle : nodeStyle;
 
+    // Calculate start pulse dot position and opacity for arrow
+    const startPulseActive = data.startPulse && Date.now() - data.startPulse < (data.startPulseDuration || 700);
+    const pulseDuration = data.startPulseDuration || 700;
+    const pulseProgress = startPulseActive ? (Date.now() - data.startPulse) / pulseDuration : 0;
+    // Animate dot from left (x=0) to right (x=24) along arrow
+    const dotX = pulseProgress * 24;
+    const dotOpacity = startPulseActive ? 0.9 - 0.6 * (1 - pulseProgress) : 0;
+    const dotRadius = startPulseActive ? 5 * (1 + 0.25 * Math.sin(pulseProgress * Math.PI * 2)) : 5;
+
     return (
-        <div style={{ ...style, borderColor: selected ? '#3498db' : '#2c3e50' }}>
+        <div style={{ ...style, borderColor: selected ? '#3498db' : '#2c3e50', position: 'relative' }}>
             {/* Start arrow for initial state q0 */}
             {data?.label === 'q0' && (
                 <svg
@@ -55,7 +82,14 @@ export default function CircularNode({ data, id, selected }) {
                             <path d="M0,0 L6,3 L0,6 z" fill="#2c3e50" />
                         </marker>
                     </defs>
+                    {/* Main arrow line */}
                     <line x1="0" y1="7" x2="24" y2="7" stroke="#2c3e50" strokeWidth="1.5" markerEnd={`url(#start-arrow-${id})`} />
+                    {/* Green dot pulse traveling along arrow */}
+                    {startPulseActive && (
+                        <>
+                            <circle cx={dotX} cy="7" r={dotRadius} fill="#2ecc71" stroke="#fff" strokeWidth="1" opacity={dotOpacity} />
+                        </>
+                    )}
                 </svg>
             )}
             {data.label}
