@@ -37,6 +37,27 @@ export default function CircularNode({ data, id, selected }) {
 
     return (
         <div style={{ ...style, borderColor: selected ? '#3498db' : '#2c3e50' }}>
+            {/* Start arrow for initial state q0 */}
+            {data?.label === 'q0' && (
+                <svg
+                    width={28}
+                    height={14}
+                    style={{ position: 'absolute', left: -28, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
+                    aria-hidden="true"
+                >
+                    <defs>
+                        <marker id={`start-arrow-${id}`}
+                                markerWidth="6"
+                                markerHeight="6"
+                                refX="6"
+                                refY="3"
+                                orient="auto">
+                            <path d="M0,0 L6,3 L0,6 z" fill="#2c3e50" />
+                        </marker>
+                    </defs>
+                    <line x1="0" y1="7" x2="24" y2="7" stroke="#2c3e50" strokeWidth="1.5" markerEnd={`url(#start-arrow-${id})`} />
+                </svg>
+            )}
             {data.label}
 
             {/* Render multiple handles around the circle */}
