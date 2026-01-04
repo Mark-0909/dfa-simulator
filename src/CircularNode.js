@@ -18,7 +18,7 @@ const baseAngles = [-90, 0, 90, 180]; // degrees
 
 export default function CircularNode({ data, id, selected }) {
     const updateNodeInternals = useUpdateNodeInternals();
-    const [animationFrame, setAnimationFrame] = useState(0);
+    const [, setAnimationFrame] = useState(0);
 
     // Support multiple handles around the circle
     // number of handles intentionally implicit (derived from angles array)
@@ -74,11 +74,11 @@ export default function CircularNode({ data, id, selected }) {
                 >
                     <defs>
                         <marker id={`start-arrow-${id}`}
-                                markerWidth="6"
-                                markerHeight="6"
-                                refX="6"
-                                refY="3"
-                                orient="auto">
+                            markerWidth="6"
+                            markerHeight="6"
+                            refX="6"
+                            refY="3"
+                            orient="auto">
                             <path d="M0,0 L6,3 L0,6 z" fill="#2c3e50" />
                         </marker>
                     </defs>
